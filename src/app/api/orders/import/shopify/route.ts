@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { fetchUnfulfilledOrders } from "@/lib/shopify";
 import { mapShopifyOrdersToInternal } from "@/lib/order-mapper";
+import { importOrders } from "@/lib/repository";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +14,13 @@ export async function GET() {
     );
   }
 
-  const mappedOrders = mapShopifyOrdersToInternal(result.orders);
-  return NextResponse.json({
-    source: "shopify",
-    imported: mappedOrders.length,
-    orders: mappedOrders,
-  });
+  const mappedOrders = await mapShopifyOrdersToInternal(result.orders);
+  await importOrders(mappedOrders);
+  return NextResponse.json(
+    {
+      source: "shopify",
+      imported: mappedOrders.length,
+    },
+    { status: 201 },
+  );
 }

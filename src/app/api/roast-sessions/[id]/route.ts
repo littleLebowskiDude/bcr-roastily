@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSessionWithComputation } from "@/lib/roast-sessions";
-import { updateOnHand, updateOrderStatus } from "@/lib/store";
+import { getSessionWithComputation, saveOnHand, toggleOrder } from "@/lib/roast-sessions";
 
 export const dynamic = "force-dynamic";
 
@@ -19,14 +18,14 @@ export async function POST(request: Request, context: RouteContext) {
   const sessionId = context.params.id;
 
   if (body.orderId && body.status) {
-    updateOrderStatus(sessionId, body.orderId, body.status);
+    await toggleOrder(sessionId, body.orderId, body.status);
   }
 
   if (Array.isArray(body.onHand)) {
-    updateOnHand(sessionId, body.onHand);
+    await saveOnHand(sessionId, body.onHand);
   }
 
-  const session = getSessionWithComputation(sessionId);
+  const session = await getSessionWithComputation(sessionId);
   if (!session) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 type RouteContext = { params: { id: string } };
 
 export async function GET(_request: Request, context: RouteContext) {
-  const session = getSessionWithComputation(context.params.id);
+  const session = await getSessionWithComputation(context.params.id);
   if (!session || !session.computation) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }

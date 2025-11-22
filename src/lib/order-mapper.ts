@@ -1,14 +1,14 @@
 import crypto from "node:crypto";
-import { listVariantMappings } from "./store";
+import { fetchVariantMappings } from "./repository";
 import type { Order, OrderItem } from "./types";
 import type { ShopifyOrderSummary } from "./shopify";
 
 const makeId = (prefix: string) => `${prefix}_${crypto.randomUUID()}`;
 
-export function mapShopifyOrdersToInternal(
+export async function mapShopifyOrdersToInternal(
   shopifyOrders: ShopifyOrderSummary[],
-): Order[] {
-  const mappings = listVariantMappings();
+): Promise<Order[]> {
+  const mappings = await fetchVariantMappings();
   return shopifyOrders.map((order) => {
     const items: OrderItem[] = order.lineItems.map((line, index) => {
       const mapping = mappings.find(

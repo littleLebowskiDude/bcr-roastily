@@ -1,10 +1,13 @@
 import { RoastPlanner } from "./components/RoastPlanner";
 import { getSessionWithComputation, getOrCreateLatestSession } from "@/lib/roast-sessions";
+import { seedIfEmpty } from "@/lib/repository";
 
 export const revalidate = 0;
 
 export default async function Home() {
-  const session = getSessionWithComputation(getOrCreateLatestSession().id);
+  await seedIfEmpty();
+  const latest = await getOrCreateLatestSession();
+  const session = await getSessionWithComputation(latest.id);
 
   if (!session) {
     return (

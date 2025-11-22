@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createRoastSession, listSessions } from "@/lib/store";
+import { createRoastSession } from "@/lib/repository";
 import { listSessionsWithTotals } from "@/lib/roast-sessions";
 
 export const dynamic = "force-dynamic";

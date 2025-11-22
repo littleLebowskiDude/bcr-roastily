@@ -1,41 +1,81 @@
 import { calculateRoastPlan } from "./roast-engine";
-import { listBlends, listCoffees, getSession, latestSession, listSessions, createRoastSession } from "./store";
+import {
+  createRoastSession,
+  fetchBlends,
+  fetchCoffees,
+  fetchLatestSession,
+  fetchOnHand,
+  fetchOrders,
+  fetchSessionById,
+  listSessions,
+  updateOrderStatus,
+  upsertOnHand,
+} from "./repository";
 import type { RoastSession } from "./types";
 
-export function getOrCreateLatestSession() {
-  return latestSession() ?? createRoastSession();
+export async function getOrCreateLatestSession() {
+  const existing = await fetchLatestSession();
+  if (existing) return existing;
+  return createRoastSession();
 }
 
-export function getSessionWithComputation(id?: string): RoastSession | null {
-  const target = id ? getSession(id) : getOrCreateLatestSession();
-  if (!target) return null;
+export async function getSessionWithComputation(id?: string): Promise<RoastSession | null> {
+  const baseSession = id ? await fetchSessionById(id) : await getOrCreateLatestSession();
+  if (!baseSession) return null;
+
+  const [coffees, blends, onHand, orders] = await Promise.all([
+    fetchCoffees(),
+    fetchBlends(),
+    fetchOnHand(baseSession.id),
+    fetchOrders(),
+  ]);
+
   const computation = calculateRoastPlan({
-    coffees: listCoffees(),
-    blends: listBlends(),
-    orders: target.orders,
-    onHand: target.onHand,
+    coffees,
+    blends,
+    orders,
+    onHand,
   });
-  target.computation = computation;
-  target.lastCalculatedAt = new Date().toISOString();
-  target.onHand = computation.onHand;
-  return target;
+
+  return {
+    ...baseSession,
+    onHand: computation.onHand,
+    orders,
+    computation,
+    lastCalculatedAt: new Date().toISOString(),
+  };
 }
 
-export function listSessionsWithTotals() {
-  return listSessions().map((session) => {
-    const computation = calculateRoastPlan({
-      coffees: listCoffees(),
-      blends: listBlends(),
-      orders: session.orders,
-      onHand: session.onHand,
-    });
-    return {
-      id: session.id,
-      sessionDate: session.sessionDate,
-      createdAt: session.createdAt,
-      updatedAt: session.updatedAt,
-      totals: computation.totals,
-      orderCount: session.orders.length,
-    };
-  });
+export async function listSessionsWithTotals() {
+  const sessions = await listSessions();
+  const [coffees, blends, orders] = await Promise.all([
+    fetchCoffees(),
+    fetchBlends(),
+    fetchOrders(),
+  ]);
+
+  return Promise.all(
+    sessions.map(async (session) => {
+      const onHand = await fetchOnHand(session.id);
+      const computation = calculateRoastPlan({ coffees, blends, orders, onHand });
+      return {
+        id: session.id,
+        sessionDate: session.sessionDate,
+        createdAt: session.createdAt,
+        updatedAt: session.updatedAt,
+        totals: computation.totals,
+        orderCount: orders.length,
+      };
+    }),
+  );
+}
+
+export async function toggleOrder(sessionId: string, orderId: string, status: "included" | "skipped") {
+  await updateOrderStatus(orderId, status);
+  return getSessionWithComputation(sessionId);
+}
+
+export async function saveOnHand(sessionId: string, entries: RoastSession["onHand"]) {
+  await upsertOnHand(sessionId, entries);
+  return getSessionWithComputation(sessionId);
 }
