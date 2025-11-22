@@ -11,11 +11,16 @@ export async function PUT(request: Request, context: RouteContext) {
   const name = typeof body.name === "string" && body.name.trim().length > 0 ? body.name.trim() : null;
   const components: BlendComponent[] = Array.isArray(body.components)
     ? body.components
-        .map((comp: any) => ({
-          coffeeId: String(comp.coffeeId ?? ""),
-          percentage: Number(comp.percentage),
-        }))
-        .filter((comp) => comp.coffeeId && !Number.isNaN(comp.percentage) && comp.percentage > 0)
+        .map(
+          (comp: any): BlendComponent => ({
+            coffeeId: String(comp.coffeeId ?? ""),
+            percentage: Number(comp.percentage),
+          }),
+        )
+        .filter(
+          (comp: BlendComponent) =>
+            comp.coffeeId && !Number.isNaN(comp.percentage) && comp.percentage > 0,
+        )
     : [];
 
   if (!name || !components.length) {
