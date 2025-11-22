@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { query, withTransaction } from "./db/queries";
+import { ensureSchema } from "./db/ensure-schema";
 import type {
   Blend,
   BlendComponent,
@@ -24,6 +25,7 @@ const mapCoffeeRow = (row: any): Coffee => ({
 });
 
 export async function fetchCoffees(): Promise<Coffee[]> {
+  await ensureSchema();
   const res = await query(
     `select id, name, roast_loss_percentage, cost_per_kg, active, created_at, updated_at
      from coffees
@@ -43,6 +45,7 @@ const mapBlendRow = (row: any): Blend => ({
 });
 
 export async function fetchBlends(): Promise<Blend[]> {
+  await ensureSchema();
   const [blendRes, componentsRes] = await Promise.all([
     query(
       `select id, name, active, created_at, updated_at
@@ -74,6 +77,7 @@ export async function fetchBlends(): Promise<Blend[]> {
 }
 
 export async function fetchVariantMappings(): Promise<VariantMapping[]> {
+  await ensureSchema();
   const res = await query(
     `select variant_id, coffee_id, is_blend, size_g, grind_type
      from variant_mappings`,
@@ -110,6 +114,7 @@ type OrderItemRow = {
 };
 
 export async function fetchOrders(): Promise<Order[]> {
+  await ensureSchema();
   const [ordersRes, itemsRes] = await Promise.all([
     query<OrderRow>(
       `select id, source, source_order_id, customer_name, status, created_at, updated_at
@@ -151,6 +156,7 @@ export async function fetchOrders(): Promise<Order[]> {
 }
 
 export async function importOrders(orders: Order[]) {
+  await ensureSchema();
   await withTransaction(async ({ query }) => {
     for (const order of orders) {
       await query(
@@ -200,6 +206,7 @@ export async function importOrders(orders: Order[]) {
 }
 
 export async function updateOrderStatus(orderId: string, status: "included" | "skipped") {
+  await ensureSchema();
   await query(
     `update orders set status = $2, updated_at = now() where id = $1`,
     [orderId, status],
@@ -207,6 +214,7 @@ export async function updateOrderStatus(orderId: string, status: "included" | "s
 }
 
 export async function fetchLatestSession(): Promise<RoastSession | null> {
+  await ensureSchema();
   const res = await query(
     `select id, session_date, created_at, updated_at
      from roast_sessions
@@ -226,6 +234,7 @@ export async function fetchLatestSession(): Promise<RoastSession | null> {
 }
 
 export async function createRoastSession(sessionDate?: string): Promise<RoastSession> {
+  await ensureSchema();
   const id = makeId("session");
   const date = sessionDate ?? new Date().toISOString().slice(0, 10);
   const res = await query(
@@ -246,6 +255,7 @@ export async function createRoastSession(sessionDate?: string): Promise<RoastSes
 }
 
 export async function listSessions(): Promise<RoastSession[]> {
+  await ensureSchema();
   const res = await query(
     `select id, session_date, created_at, updated_at
      from roast_sessions
@@ -262,6 +272,7 @@ export async function listSessions(): Promise<RoastSession[]> {
 }
 
 export async function fetchSessionById(id: string): Promise<RoastSession | null> {
+  await ensureSchema();
   const res = await query(
     `select id, session_date, created_at, updated_at
      from roast_sessions
@@ -281,6 +292,7 @@ export async function fetchSessionById(id: string): Promise<RoastSession | null>
 }
 
 export async function fetchOnHand(sessionId: string): Promise<OnHandStock[]> {
+  await ensureSchema();
   const res = await query(
     `select bucket_type, bucket_id, on_hand_roasted_g
      from on_hand_stock
@@ -295,6 +307,7 @@ export async function fetchOnHand(sessionId: string): Promise<OnHandStock[]> {
 }
 
 export async function upsertOnHand(sessionId: string, entries: OnHandStock[]) {
+  await ensureSchema();
   await withTransaction(async ({ query }) => {
     for (const entry of entries) {
       await query(
@@ -310,6 +323,7 @@ export async function upsertOnHand(sessionId: string, entries: OnHandStock[]) {
 }
 
 export async function seedIfEmpty() {
+  await ensureSchema();
   const { rows } = await query<{ count: string }>(`select count(*)::int as count from coffees`);
   if (Number(rows[0]?.count ?? 0) > 0) return;
 
