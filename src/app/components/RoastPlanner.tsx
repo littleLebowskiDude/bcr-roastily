@@ -94,6 +94,13 @@ export function RoastPlanner({ session }: Props) {
     return { coffee, blends };
   }, [data.onHand]);
 
+  const sessionDate =
+    typeof data.sessionDate === "string"
+      ? data.sessionDate
+      : data.sessionDate instanceof Date
+        ? data.sessionDate.toISOString().slice(0, 10)
+        : String(data.sessionDate);
+
   return (
     <div className="space-y-6">
       <section className="grid gap-4 md:grid-cols-3">
@@ -101,7 +108,7 @@ export function RoastPlanner({ session }: Props) {
           <p className="text-xs uppercase tracking-[0.2em] text-emerald-700">
             Session date
           </p>
-          <p className="text-3xl font-semibold text-slate-900">{data.sessionDate}</p>
+          <p className="text-3xl font-semibold text-slate-900">{sessionDate}</p>
           <p className="text-xs text-slate-500">Auto-created every Monday</p>
         </div>
         <div className="rounded-3xl bg-white/80 p-5 shadow-sm ring-1 ring-slate-100 backdrop-blur">
