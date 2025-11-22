@@ -1,13 +1,16 @@
 import { RoastPlanner } from "./components/RoastPlanner";
 import { getSessionWithComputation, getOrCreateLatestSession } from "@/lib/roast-sessions";
-import { seedIfEmpty } from "@/lib/repository";
+import { fetchSettingsSnapshot, seedIfEmpty } from "@/lib/repository";
 
 export const revalidate = 0;
 
 export default async function Home() {
   await seedIfEmpty();
   const latest = await getOrCreateLatestSession();
-  const session = await getSessionWithComputation(latest.id);
+  const [session, settings] = await Promise.all([
+    getSessionWithComputation(latest.id),
+    fetchSettingsSnapshot(),
+  ]);
 
   if (!session) {
     return (
@@ -47,7 +50,7 @@ export default async function Home() {
           </div>
         </header>
 
-        <RoastPlanner session={session} />
+        <RoastPlanner session={session} settings={settings} />
       </div>
     </main>
   );

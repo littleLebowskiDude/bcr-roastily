@@ -115,9 +115,17 @@ type OrderItemRow = {
   mapped_is_blend: boolean;
 };
 
+type VariantMappingRow = {
+  variant_id: string;
+  coffee_id: string;
+  is_blend: boolean;
+  size_g: number;
+  grind_type: string;
+};
+
 export async function fetchOrders(): Promise<Order[]> {
   await ensureSchema();
-  const [ordersRes, itemsRes] = await Promise.all([
+  const [ordersRes, itemsRes, mappingsRes] = await Promise.all([
     query<OrderRow>(
       `select id, source, source_order_id, customer_name, status, created_at, updated_at
        from orders
@@ -126,6 +134,10 @@ export async function fetchOrders(): Promise<Order[]> {
     query<OrderItemRow>(
       `select id, order_id, variant_id, product_name, size_g, grind_type, quantity, mapped_coffee_id, mapped_is_blend
        from order_items`,
+    ),
+    query<VariantMappingRow>(
+      `select variant_id, coffee_id, is_blend, size_g, grind_type
+       from variant_mappings`,
     ),
   ]);
 
@@ -136,6 +148,10 @@ export async function fetchOrders(): Promise<Order[]> {
     itemsByOrder.set(row.order_id, list);
   });
 
+  const variantMap = new Map<string, VariantMappingRow>(
+    mappingsRes.rows.map((row) => [row.variant_id, row]),
+  );
+
   return ordersRes.rows.map((row) => ({
     id: row.id,
     source: row.source,
@@ -144,16 +160,19 @@ export async function fetchOrders(): Promise<Order[]> {
     status: row.status,
     createdAt: toIsoString(row.created_at),
     updatedAt: toIsoString(row.updated_at),
-    items: (itemsByOrder.get(row.id) ?? []).map((item) => ({
-      id: item.id,
-      variantId: item.variant_id,
-      productName: item.product_name,
-      sizeG: Number(item.size_g),
-      grindType: item.grind_type,
-      quantity: Number(item.quantity),
-      mappedCoffeeId: item.mapped_coffee_id,
-      mappedIsBlend: Boolean(item.mapped_is_blend),
-    })),
+    items: (itemsByOrder.get(row.id) ?? []).map((item) => {
+      const mapping = variantMap.get(item.variant_id);
+      return {
+        id: item.id,
+        variantId: item.variant_id,
+        productName: item.product_name,
+        sizeG: mapping?.size_g ?? Number(item.size_g),
+        grindType: mapping?.grind_type ?? item.grind_type,
+        quantity: Number(item.quantity),
+        mappedCoffeeId: mapping?.coffee_id ?? item.mapped_coffee_id,
+        mappedIsBlend: mapping?.is_blend ?? Boolean(item.mapped_is_blend),
+      };
+    }),
   }));
 }
 
@@ -165,8 +184,7 @@ export async function importOrders(orders: Order[]) {
         `insert into orders (id, source, source_order_id, customer_name, status, created_at, updated_at)
          values ($1, $2, $3, $4, $5, $6, $7)
          on conflict (id) do update
-         set status = excluded.status,
-             customer_name = excluded.customer_name,
+         set customer_name = excluded.customer_name,
              updated_at = excluded.updated_at`,
         [
           order.id,
@@ -179,6 +197,7 @@ export async function importOrders(orders: Order[]) {
         ],
       );
 
+      const seenItemIds: string[] = [];
       for (const item of order.items) {
         await query(
           `insert into order_items (id, order_id, variant_id, product_name, size_g, grind_type, quantity, mapped_coffee_id, mapped_is_blend)
@@ -201,6 +220,17 @@ export async function importOrders(orders: Order[]) {
             item.mappedCoffeeId,
             item.mappedIsBlend,
           ],
+        );
+        seenItemIds.push(item.id);
+      }
+
+      if (seenItemIds.length === 0) {
+        await query(`delete from order_items where order_id = $1`, [order.id]);
+      } else {
+        const placeholders = seenItemIds.map((_, index) => `$${index + 2}`).join(", ");
+        await query(
+          `delete from order_items where order_id = $1 and id not in (${placeholders})`,
+          [order.id, ...seenItemIds],
         );
       }
     }
@@ -560,5 +590,131 @@ export async function seedIfEmpty() {
         );
       }
     }
+  });
+}
+
+export async function fetchSettingsSnapshot() {
+  const [coffees, blends, variantMappings] = await Promise.all([
+    fetchCoffees(),
+    fetchBlends(),
+    fetchVariantMappings(),
+  ]);
+  return { coffees, blends, variantMappings };
+}
+
+export async function createCoffee(input: {
+  name: string;
+  roastLossPercentage: number;
+  costPerKg?: number;
+}) {
+  await ensureSchema();
+  const id = makeId("coffee");
+  const res = await query(
+    `insert into coffees (id, name, roast_loss_percentage, cost_per_kg, active, created_at, updated_at)
+     values ($1,$2,$3,$4,true,now(),now())
+     returning id, name, roast_loss_percentage, cost_per_kg, active, created_at, updated_at`,
+    [id, input.name, input.roastLossPercentage, input.costPerKg ?? null],
+  );
+  return mapCoffeeRow(res.rows[0]);
+}
+
+export async function updateCoffee(
+  id: string,
+  input: { name: string; roastLossPercentage: number; costPerKg?: number },
+) {
+  await ensureSchema();
+  const res = await query(
+    `update coffees
+     set name = $2,
+         roast_loss_percentage = $3,
+         cost_per_kg = $4,
+         updated_at = now()
+     where id = $1
+     returning id, name, roast_loss_percentage, cost_per_kg, active, created_at, updated_at`,
+    [id, input.name, input.roastLossPercentage, input.costPerKg ?? null],
+  );
+  return res.rows[0] ? mapCoffeeRow(res.rows[0]) : null;
+}
+
+export async function archiveCoffee(id: string) {
+  await ensureSchema();
+  await query(`update coffees set active = false, updated_at = now() where id = $1`, [id]);
+}
+
+export async function createBlend(input: { name: string; components: BlendComponent[] }) {
+  await ensureSchema();
+  const id = makeId("blend");
+  await withTransaction(async ({ query }) => {
+    await query(
+      `insert into blends (id, name, active, created_at, updated_at)
+       values ($1,$2,true,now(),now())`,
+      [id, input.name],
+    );
+    for (const component of input.components) {
+      await query(
+        `insert into blend_components (id, blend_id, coffee_id, percentage, created_at, updated_at)
+         values ($1,$2,$3,$4,now(),now())`,
+        [makeId("component"), id, component.coffeeId, component.percentage],
+      );
+    }
+  });
+  return fetchBlends();
+}
+
+export async function updateBlend(
+  id: string,
+  input: { name: string; components: BlendComponent[] },
+) {
+  await ensureSchema();
+  await withTransaction(async ({ query }) => {
+    await query(
+      `update blends set name = $2, active = true, updated_at = now() where id = $1`,
+      [id, input.name],
+    );
+    await query(`delete from blend_components where blend_id = $1`, [id]);
+    for (const component of input.components) {
+      await query(
+        `insert into blend_components (id, blend_id, coffee_id, percentage, created_at, updated_at)
+         values ($1,$2,$3,$4,now(),now())`,
+        [makeId("component"), id, component.coffeeId, component.percentage],
+      );
+    }
+  });
+  return fetchBlends();
+}
+
+export async function archiveBlend(id: string) {
+  await ensureSchema();
+  await query(`update blends set active = false, updated_at = now() where id = $1`, [id]);
+}
+
+export async function upsertVariantMapping(mapping: VariantMapping) {
+  await ensureSchema();
+  await query(
+    `insert into variant_mappings (variant_id, coffee_id, is_blend, size_g, grind_type, created_at, updated_at)
+     values ($1,$2,$3,$4,$5,now(),now())
+     on conflict (variant_id) do update
+     set coffee_id = excluded.coffee_id,
+         is_blend = excluded.is_blend,
+         size_g = excluded.size_g,
+         grind_type = excluded.grind_type,
+         updated_at = now()`,
+    [mapping.variantId, mapping.coffeeId, mapping.isBlend, mapping.sizeG, mapping.grindType],
+  );
+}
+
+export async function deleteVariantMapping(variantId: string) {
+  await ensureSchema();
+  await query(`delete from variant_mappings where variant_id = $1`, [variantId]);
+}
+
+export async function clearOperationalData() {
+  await ensureSchema();
+  await withTransaction(async ({ query }) => {
+    await query(`delete from on_hand_stock`);
+    await query(`delete from roast_results`);
+    await query(`delete from order_items`);
+    await query(`delete from orders`);
+    await query(`delete from roast_sessions`);
   });
 }
