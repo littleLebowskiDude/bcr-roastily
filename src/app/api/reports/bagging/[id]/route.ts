@@ -13,7 +13,7 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const pdf = await buildBaggingPdf(session.id, session.computation.bagging);
-  return new NextResponse(pdf, {
+  return new NextResponse(Buffer.from(pdf), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `inline; filename=bagging-report-${session.id}.pdf`,

@@ -13,7 +13,7 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const pdf = await buildRoastingPdf(session.id, session.computation);
-  return new NextResponse(pdf, {
+  return new NextResponse(Buffer.from(pdf), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `inline; filename=roasting-report-${session.id}.pdf`,
