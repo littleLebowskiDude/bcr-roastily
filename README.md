@@ -1,36 +1,54 @@
-# Shopify Open Orders
+# Roast Mate — Beechworth Coffee Roasters
 
-A minimal Next.js app that connects to the Shopify Admin API and lists open, unfulfilled orders. Intended as a starting point for roast-planning tooling (e.g., "how many drops of green beans to roast today").
+Mobile-friendly roast-planning system that pulls unfulfilled Shopify orders, converts variants into coffee/blend demand, enforces full 5 kg drops, tracks on-hand roasted stock, and outputs roasting + bagging reports.
 
-## Prerequisites
-- Shopify store domain (e.g., `your-store.myshopify.com`)
-- Shopify Admin API access token with read access to Orders
-- Node 18+
+## Stack
+- Next.js 14 (App Router, React server components)
+- TypeScript
+- PostgreSQL-ready data model (in-memory store in this scaffold)
+- PDF generation via `pdf-lib`
+- Tailwind CSS
 
 ## Environment variables
-Create a `.env.local` file based on `.env.example`:
-
+Copy `.env.example` to `.env.local`:
 ```
 SHOPIFY_STORE_DOMAIN=your-store.myshopify.com
 SHOPIFY_ADMIN_API_ACCESS_TOKEN=shpat_xxxxxx
-# Optional: override default API version (2024-07)
 SHOPIFY_API_VERSION=2024-07
 DATABASE_URL=postgresql://user:password@host:5432/dbname?sslmode=require
 ```
 
-The Shopify call happens server-side (API route + server component), so the admin token never reaches the browser.
+Shopify calls stay server-side. The Postgres URL is used for the `/api/db` health check and future persistence.
 
-## Run locally
+## Key features implemented
+- Roast sessions (auto-created, full 5 kg drops, surplus -> on-hand).
+- Order skipping per session.
+- Variant-to-coffee/blend mapping (sample data seeded).
+- Blend recipes with drop-based blending.
+- Roast engine: on-hand deduction, roast loss, drops, surplus handling.
+- On-hand editor for single origins and blends.
+- Bagging report (per SKU/size/grind) and pick-list data.
+- Roasting and bagging PDF endpoints.
+- Settings endpoint exposing coffees, blends, and mappings.
+
+## Core API routes
+- `GET /api/orders/import/shopify` — pull unfulfilled Shopify orders.
+- `GET /api/roast-sessions` — list sessions with totals.
+- `POST /api/roast-sessions` — create a new session.
+- `GET/POST /api/roast-sessions/{id}` — fetch/update on-hand + skip orders.
+- `POST /api/roast-sessions/{id}/calculate` — recompute roast plan.
+- `GET /api/reports/roasting/{id}` — roasting PDF.
+- `GET /api/reports/bagging/{id}` — bagging PDF.
+- `GET /api/settings` — coffees, blends, mappings, batch size.
+- `GET /api/db` — Postgres connectivity check.
+
+## Running locally
 ```bash
 npm install
 npm run dev
 # open http://localhost:3000
 ```
 
-## API route
-`/api/orders` returns the same unfulfilled order payload shown in the UI. It uses the Admin REST endpoint with `status=open` and `fulfillment_status=unfulfilled`.
-
-`/api/db` pings Postgres using `DATABASE_URL` to confirm connectivity.
-
-## Deploy
-Deploy to Vercel (or any Node-capable host) and set the same environment variables in the hosting dashboard. No additional build steps beyond `npm run build` are required.
+## Notes
+- The scaffold uses an in-memory store with sample coffees, blends, orders, and on-hand stock. Swap the store with Postgres-backed repositories to persist sessions.
+- Batch size is fixed at 5 kg green (no partial batches), defined in `src/lib/constants.ts`.

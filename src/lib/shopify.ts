@@ -8,6 +8,10 @@ type ShopifyCustomer = {
 
 type ShopifyLineItem = {
   quantity: number;
+  variant_id: number;
+  title: string;
+  variant_title?: string | null;
+  grams: number;
 };
 
 type ShopifyOrder = {
@@ -31,6 +35,13 @@ export type ShopifyOrderSummary = {
   currency: string;
   lineItemCount: number;
   financialStatus?: string;
+  lineItems: {
+    variantId: number;
+    productName: string;
+    sizeG: number;
+    quantity: number;
+    grindType: string;
+  }[];
 };
 
 export type ShopifyFetchResult = {
@@ -107,6 +118,13 @@ export async function fetchUnfulfilledOrders(): Promise<ShopifyFetchResult> {
           0,
         ),
         financialStatus: order.financial_status ?? undefined,
+        lineItems: order.line_items.map((item) => ({
+          variantId: item.variant_id,
+          productName: `${item.title}${item.variant_title ? ` - ${item.variant_title}` : ""}`,
+          sizeG: item.grams || 0,
+          quantity: item.quantity,
+          grindType: item.variant_title ?? "Whole bean",
+        })),
       }),
     );
 

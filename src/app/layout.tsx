@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Shopify Open Orders",
-  description: "List unfulfilled Shopify orders for daily roast planning.",
+  title: "Roast Mate",
+  description: "Roasting planner for Beechworth Coffee Roasters.",
 };
 
 export default function RootLayout({
