@@ -13,6 +13,8 @@ import type {
 
 const nowIso = () => new Date().toISOString();
 const makeId = (prefix: string) => `${prefix}_${crypto.randomUUID()}`;
+const toIsoString = (value: any) =>
+  value instanceof Date ? value.toISOString() : typeof value === "string" ? value : String(value);
 
 const mapCoffeeRow = (row: any): Coffee => ({
   id: row.id,
@@ -20,8 +22,8 @@ const mapCoffeeRow = (row: any): Coffee => ({
   roastLossPercentage: Number(row.roast_loss_percentage ?? 0),
   costPerKg: row.cost_per_kg ? Number(row.cost_per_kg) : undefined,
   active: Boolean(row.active),
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
+  createdAt: toIsoString(row.created_at),
+  updatedAt: toIsoString(row.updated_at),
 });
 
 export async function fetchCoffees(): Promise<Coffee[]> {
@@ -40,8 +42,8 @@ const mapBlendRow = (row: any): Blend => ({
   name: row.name,
   components: [],
   active: Boolean(row.active),
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
+  createdAt: toIsoString(row.created_at),
+  updatedAt: toIsoString(row.updated_at),
 });
 
 export async function fetchBlends(): Promise<Blend[]> {
@@ -140,8 +142,8 @@ export async function fetchOrders(): Promise<Order[]> {
     sourceOrderId: row.source_order_id,
     customerName: row.customer_name,
     status: row.status,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    createdAt: toIsoString(row.created_at),
+    updatedAt: toIsoString(row.updated_at),
     items: (itemsByOrder.get(row.id) ?? []).map((item) => ({
       id: item.id,
       variantId: item.variant_id,
@@ -225,9 +227,9 @@ export async function fetchLatestSession(): Promise<RoastSession | null> {
   const row = res.rows[0];
   return {
     id: row.id,
-    sessionDate: row.session_date,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    sessionDate: toIsoString(row.session_date),
+    createdAt: toIsoString(row.created_at),
+    updatedAt: toIsoString(row.updated_at),
     orders: [],
     onHand: [],
   };
@@ -246,9 +248,9 @@ export async function createRoastSession(sessionDate?: string): Promise<RoastSes
   const row = res.rows[0];
   return {
     id: row.id,
-    sessionDate: row.session_date,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    sessionDate: toIsoString(row.session_date),
+    createdAt: toIsoString(row.created_at),
+    updatedAt: toIsoString(row.updated_at),
     orders: [],
     onHand: [],
   };
@@ -263,9 +265,9 @@ export async function listSessions(): Promise<RoastSession[]> {
   );
   return res.rows.map((row) => ({
     id: row.id,
-    sessionDate: row.session_date,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    sessionDate: toIsoString(row.session_date),
+    createdAt: toIsoString(row.created_at),
+    updatedAt: toIsoString(row.updated_at),
     orders: [],
     onHand: [],
   }));
@@ -283,9 +285,9 @@ export async function fetchSessionById(id: string): Promise<RoastSession | null>
   const row = res.rows[0];
   return {
     id: row.id,
-    sessionDate: row.session_date,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    sessionDate: toIsoString(row.session_date),
+    createdAt: toIsoString(row.created_at),
+    updatedAt: toIsoString(row.updated_at),
     orders: [],
     onHand: [],
   };

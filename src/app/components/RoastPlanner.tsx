@@ -94,12 +94,12 @@ export function RoastPlanner({ session }: Props) {
     return { coffee, blends };
   }, [data.onHand]);
 
-  const sessionDate =
-    typeof data.sessionDate === "string"
-      ? data.sessionDate
-      : data.sessionDate instanceof Date
-        ? data.sessionDate.toISOString().slice(0, 10)
-        : String(data.sessionDate);
+  const sessionDate = (() => {
+    const raw = data.sessionDate as unknown;
+    if (typeof raw === "string") return raw;
+    if (raw instanceof Date) return raw.toISOString().slice(0, 10);
+    return String(raw);
+  })();
 
   return (
     <div className="space-y-6">
