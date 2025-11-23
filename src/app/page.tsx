@@ -40,12 +40,20 @@ export default async function Home() {
                 5 kg drops, and outputs roasting, bagging, and pick-list reports.
               </p>
             </div>
-            <div className="flex flex-col items-end text-right">
-              <p className="text-sm uppercase tracking-[0.25em] text-emerald-100">
-                Batch size
-              </p>
-              <p className="text-2xl font-semibold">5 kg green</p>
-              <p className="text-xs text-emerald-200">No partial batches ever</p>
+            <div className="flex flex-col items-end gap-3 text-right">
+              <div className="flex items-center gap-2">
+                <a
+                  href="/settings"
+                  className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-white/20"
+                >
+                  Settings
+                </a>
+              </div>
+              <div className="text-right">
+                <p className="text-sm uppercase tracking-[0.25em] text-emerald-100">Batch size</p>
+                <p className="text-2xl font-semibold">5 kg green</p>
+                <p className="text-xs text-emerald-200">No partial batches ever</p>
+              </div>
             </div>
           </div>
         </header>
