@@ -2,6 +2,12 @@ import { fetchVariantMappings } from "./repository";
 import type { Order, OrderItem } from "./types";
 import type { ShopifyOrderSummary } from "./shopify";
 
+const normalizeVariantId = (value: string | number | null | undefined) => {
+  const raw = String(value ?? "");
+  const gidMatch = raw.split("/").filter(Boolean).pop();
+  return gidMatch ?? raw;
+};
+
 export async function mapShopifyOrdersToInternal(
   shopifyOrders: ShopifyOrderSummary[],
 ): Promise<Order[]> {
@@ -9,9 +15,12 @@ export async function mapShopifyOrdersToInternal(
   return shopifyOrders.map((order) => {
     const orderId = `shopify_${order.id}`;
     const items: OrderItem[] = order.lineItems.map((line, index) => {
-      const mapping = mappings.find(
-        (item) => item.variantId === String(line.variantId),
-      );
+      const variantId = String(line.variantId);
+      const normalizedVariantId = normalizeVariantId(variantId);
+      const mapping = mappings.find((item) => {
+        const normalizedMappingId = normalizeVariantId(item.variantId);
+        return item.variantId === variantId || normalizedMappingId === normalizedVariantId;
+      });
       return {
         id: `shopify_${order.id}_${line.variantId}_${index}`,
         variantId: String(line.variantId),
