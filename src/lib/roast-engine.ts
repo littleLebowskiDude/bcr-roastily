@@ -33,9 +33,18 @@ export function calculateRoastPlan(input: EngineInput): RoastComputation {
   const coffeeMap = toCoffeeMap(input.coffees);
   const blendMap = toBlendMap(input.blends);
   const onHandMap = new Map<string, number>();
-  input.onHand.forEach((entry) =>
-    onHandMap.set(bucketKey(entry.bucketType, entry.bucketId), entry.onHandRoastedG),
-  );
+
+  input.coffees.forEach((coffee) => {
+    onHandMap.set(bucketKey("coffee", coffee.id), 0);
+  });
+
+  input.blends.forEach((blend) => {
+    onHandMap.set(bucketKey("blend", blend.id), 0);
+  });
+
+  input.onHand.forEach((entry) => {
+    onHandMap.set(bucketKey(entry.bucketType, entry.bucketId), entry.onHandRoastedG);
+  });
 
   const coffeeNeeds = new Map<string, { roasted: number; blendId?: string }>();
   const blendBuckets = new Map<string, BlendBucket>();
