@@ -265,9 +265,12 @@ export async function fetchLatestSession(): Promise<RoastSession | null> {
   };
 }
 
-export async function createRoastSession(sessionDate?: string): Promise<RoastSession> {
+export async function createRoastSession(
+  sessionDate?: string,
+  sessionId?: string,
+): Promise<RoastSession> {
   await ensureSchema();
-  const id = makeId("session");
+  const id = sessionId ?? makeId("session");
   const date = sessionDate ?? new Date().toISOString().slice(0, 10);
   const res = await query(
     `insert into roast_sessions (id, session_date, created_at, updated_at)
