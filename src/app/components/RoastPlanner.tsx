@@ -79,15 +79,6 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
     drops: 0,
   };
 
-  const resolveBucketLabel = (type: "coffee" | "blend", id: string) => {
-    if (type === "coffee") {
-      const match = computation?.results.find((item) => item.coffeeId === id);
-      return match?.coffeeName ?? id.replace("coffee_", "");
-    }
-    const blendMatch = computation?.blendBuckets.find((item) => item.blendId === id);
-    return blendMatch?.blendName ?? id.replace("blend_", "");
-  };
-
   const handleOrderToggle = async (order: Order) => {
     const status = order.status === "skipped" ? "included" : "skipped";
     const res = await fetch(`/api/roast-sessions/${data.id}`, {
@@ -334,6 +325,26 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
     () => new Map(settings.blends.map((blend) => [blend.id, blend.name])),
     [settings.blends],
   );
+
+  const resolveBucketLabel = (type: "coffee" | "blend", id: string) => {
+    if (type === "coffee") {
+      const match = computation?.results.find((item) => item.coffeeId === id);
+      if (match?.coffeeName) return match.coffeeName;
+
+      const settingsName = coffeeNameById.get(id);
+      if (settingsName) return settingsName;
+
+      return id.replace("coffee_", "");
+    }
+
+    const blendMatch = computation?.blendBuckets.find((item) => item.blendId === id);
+    if (blendMatch?.blendName) return blendMatch.blendName;
+
+    const settingsBlendName = blendNameById.get(id);
+    if (settingsBlendName) return settingsBlendName;
+
+    return id.replace("blend_", "");
+  };
 
   const sessionDate = (() => {
     const raw = data.sessionDate as unknown;
