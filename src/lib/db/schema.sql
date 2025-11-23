@@ -39,6 +39,7 @@ create table if not exists variant_mappings (
 
 create table if not exists orders (
   id text primary key,
+  roast_session_id text references roast_sessions(id) on delete cascade,
   source text not null,
   source_order_id text not null,
   customer_name text not null,
@@ -90,3 +91,6 @@ create table if not exists roast_results (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table orders
+  add column if not exists roast_session_id text references roast_sessions(id) on delete cascade;

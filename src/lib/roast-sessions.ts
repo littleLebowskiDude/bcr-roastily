@@ -27,7 +27,7 @@ export async function getSessionWithComputation(id?: string): Promise<RoastSessi
     fetchCoffees(),
     fetchBlends(),
     fetchOnHand(baseSession.id),
-    fetchOrders(),
+    fetchOrders(baseSession.id),
   ]);
 
   const computation = calculateRoastPlan({
@@ -48,15 +48,12 @@ export async function getSessionWithComputation(id?: string): Promise<RoastSessi
 
 export async function listSessionsWithTotals() {
   const sessions = await listSessions();
-  const [coffees, blends, orders] = await Promise.all([
-    fetchCoffees(),
-    fetchBlends(),
-    fetchOrders(),
-  ]);
+  const [coffees, blends] = await Promise.all([fetchCoffees(), fetchBlends()]);
 
   return Promise.all(
     sessions.map(async (session) => {
       const onHand = await fetchOnHand(session.id);
+      const orders = await fetchOrders(session.id);
       const computation = calculateRoastPlan({ coffees, blends, orders, onHand });
       return {
         id: session.id,

@@ -37,8 +37,9 @@ Shopify calls stay server-side. The Postgres URL is used for the `/api/db` healt
 - `POST /api/roast-sessions` — create a new session.
 - `GET/POST /api/roast-sessions/{id}` — fetch/update on-hand + skip orders.
 - `POST /api/roast-sessions/{id}/calculate` — recompute roast plan.
-- `GET /api/reports/roasting/{id}` — roasting PDF.
-- `GET /api/reports/bagging/{id}` — bagging PDF.
+- `GET /api/reports/roasting/{id}` - roasting PDF.
+- `GET /api/reports/bagging/{id}` - bagging PDF.
+- `GET /api/reports/pick-list/{id}` - order pick-list PDF.
 - `GET /api/settings` — coffees, blends, mappings, batch size.
 - `POST/PUT/DELETE /api/settings/coffees|blends|variant-mappings` — manage recipes and variant mapping.
 - `GET /api/db` — Postgres connectivity check.

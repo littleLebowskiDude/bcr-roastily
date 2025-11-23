@@ -40,6 +40,8 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
   const [isPending, startTransition] = useTransition();
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+  const [recalculating, setRecalculating] = useState(false);
+  const [recalcError, setRecalcError] = useState<string | null>(null);
   const [onHandDraft, setOnHandDraft] = useState<Record<string, number>>(() => {
     const draft: Record<string, number> = {};
     session.onHand.forEach((item) => {
@@ -120,11 +122,22 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
   };
 
   const refreshSession = async () => {
-    const res = await fetch(`/api/roast-sessions/${data.id}/calculate`, { method: "POST" });
-    if (res.ok) {
+    setRecalcError(null);
+    setRecalculating(true);
+    try {
+      const res = await fetch(`/api/roast-sessions/${data.id}/calculate`, { method: "POST" });
+      if (!res.ok) {
+        const message = await res.text();
+        throw new Error(message || "Recalculation failed.");
+      }
       const payload = await res.json();
       setData(payload.session);
       startTransition(() => router.refresh());
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Recalculation failed.";
+      setRecalcError(message);
+    } finally {
+      setRecalculating(false);
     }
   };
 
@@ -399,6 +412,7 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
               Imports use the live Shopify credentials from your environment variables.
             </p>
             {importError ? <p className="text-xs text-amber-700">{importError}</p> : null}
+            {recalcError ? <p className="text-xs text-amber-700">{recalcError}</p> : null}
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <button
@@ -410,9 +424,10 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
             </button>
             <button
               onClick={refreshSession}
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300"
+              disabled={recalculating}
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Recalculate session
+              {recalculating ? "Recalculating..." : "Recalculate session"}
             </button>
           </div>
         </div>
@@ -802,10 +817,10 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
             >
               <div>
                 <p className="text-sm font-semibold text-slate-900">
-                  {order.sourceOrderId} — {order.customerName}
+                  {order.sourceOrderId} - {order.customerName}
                 </p>
                 <p className="text-xs text-slate-500">
-                  {order.items.length} items • {new Date(order.createdAt).toLocaleDateString()}
+                  {order.items.length} items | {new Date(order.createdAt).toLocaleDateString()}
                 </p>
               </div>
               <button
@@ -886,7 +901,7 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
             Save on-hand
           </button>
           {isPending ? (
-            <span className="text-xs text-slate-500">Calculating…</span>
+            <span className="text-xs text-slate-500">Calculating...</span>
           ) : null}
         </div>
       </SectionCard>
@@ -944,7 +959,7 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
                 </span>
               </div>
               <p className="text-xs text-slate-600">
-                Required {formatG(blend.requiredRoastedG)} → Actual {formatG(blend.actualRoastedG)}
+                Required {formatG(blend.requiredRoastedG)} / Actual {formatG(blend.actualRoastedG)}
               </p>
             </div>
           ))}
@@ -961,7 +976,7 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
               <div>
                 <p className="text-sm font-semibold text-slate-900">{line.label}</p>
                 <p className="text-xs text-slate-500">
-                  {line.sizeG} g • {line.grindType}
+                  {line.sizeG} g | {line.grindType}
                 </p>
               </div>
               <div className="flex items-center gap-3 text-sm text-slate-700">
@@ -989,6 +1004,14 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
             rel="noreferrer"
           >
             Bagging PDF
+          </a>
+          <a
+            className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm transition hover:border-slate-300"
+            href={`/api/reports/pick-list/${data.id}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Pick list PDF
           </a>
         </div>
       </SectionCard>

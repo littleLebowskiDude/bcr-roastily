@@ -9,6 +9,12 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const { searchParams } = new URL(request.url);
   const sessionId = searchParams.get("sessionId") ?? undefined;
+  if (!sessionId) {
+    return NextResponse.json(
+      { error: "sessionId is required to import orders" },
+      { status: 400 },
+    );
+  }
 
   const result = await fetchUnfulfilledOrders();
   if (result.error) {
@@ -19,8 +25,8 @@ export async function POST(request: Request) {
   }
 
   const mappedOrders = await mapShopifyOrdersToInternal(result.orders);
-  await importOrders(mappedOrders);
-  const session = sessionId ? await getSessionWithComputation(sessionId) : undefined;
+  await importOrders(mappedOrders, sessionId);
+  const session = await getSessionWithComputation(sessionId);
   return NextResponse.json(
     {
       source: "shopify",

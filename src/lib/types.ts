@@ -43,6 +43,7 @@ export type OrderItem = {
 
 export type Order = {
   id: string;
+  roastSessionId?: string;
   source: "shopify" | "xero" | "manual";
   sourceOrderId: string;
   customerName: string;

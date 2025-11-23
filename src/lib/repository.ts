@@ -95,6 +95,7 @@ export async function fetchVariantMappings(): Promise<VariantMapping[]> {
 
 type OrderRow = {
   id: string;
+  roast_session_id: string | null;
   source: "shopify" | "xero" | "manual";
   source_order_id: string;
   customer_name: string;
@@ -123,23 +124,35 @@ type VariantMappingRow = {
   grind_type: string;
 };
 
-export async function fetchOrders(): Promise<Order[]> {
+export async function fetchOrders(sessionId?: string): Promise<Order[]> {
   await ensureSchema();
-  const [ordersRes, itemsRes, mappingsRes] = await Promise.all([
-    query<OrderRow>(
-      `select id, source, source_order_id, customer_name, status, created_at, updated_at
-       from orders
-       order by created_at desc`,
-    ),
-    query<OrderItemRow>(
-      `select id, order_id, variant_id, product_name, size_g, grind_type, quantity, mapped_coffee_id, mapped_is_blend
-       from order_items`,
-    ),
-    query<VariantMappingRow>(
-      `select variant_id, coffee_id, is_blend, size_g, grind_type
-       from variant_mappings`,
-    ),
-  ]);
+
+  if (sessionId) {
+    await query(`update orders set roast_session_id = $1 where roast_session_id is null`, [sessionId]);
+  }
+
+  const ordersRes = await query<OrderRow>(
+    `select id, roast_session_id, source, source_order_id, customer_name, status, created_at, updated_at
+     from orders
+     ${sessionId ? "where roast_session_id = $1" : ""}
+     order by created_at desc`,
+    sessionId ? [sessionId] : [],
+  );
+
+  const orderIds = ordersRes.rows.map((row) => row.id);
+  const itemsRes = orderIds.length
+    ? await query<OrderItemRow>(
+        `select id, order_id, variant_id, product_name, size_g, grind_type, quantity, mapped_coffee_id, mapped_is_blend
+         from order_items
+         where order_id = any($1::text[])`,
+        [orderIds],
+      )
+    : { rows: [] as OrderItemRow[] };
+
+  const mappingsRes = await query<VariantMappingRow>(
+    `select variant_id, coffee_id, is_blend, size_g, grind_type
+     from variant_mappings`,
+  );
 
   const itemsByOrder = new Map<string, OrderItemRow[]>();
   itemsRes.rows.forEach((row) => {
@@ -154,6 +167,7 @@ export async function fetchOrders(): Promise<Order[]> {
 
   return ordersRes.rows.map((row) => ({
     id: row.id,
+    roastSessionId: row.roast_session_id ?? undefined,
     source: row.source,
     sourceOrderId: row.source_order_id,
     customerName: row.customer_name,
@@ -176,18 +190,23 @@ export async function fetchOrders(): Promise<Order[]> {
   }));
 }
 
-export async function importOrders(orders: Order[]) {
+export async function importOrders(orders: Order[], sessionId: string) {
+  if (!sessionId) {
+    throw new Error("A session ID is required to import orders.");
+  }
   await ensureSchema();
   await withTransaction(async ({ query }) => {
     for (const order of orders) {
       await query(
-        `insert into orders (id, source, source_order_id, customer_name, status, created_at, updated_at)
-         values ($1, $2, $3, $4, $5, $6, $7)
+        `insert into orders (id, roast_session_id, source, source_order_id, customer_name, status, created_at, updated_at)
+         values ($1, $2, $3, $4, $5, $6, $7, $8)
          on conflict (id) do update
          set customer_name = excluded.customer_name,
+             roast_session_id = excluded.roast_session_id,
              updated_at = excluded.updated_at`,
         [
           order.id,
+          order.roastSessionId ?? sessionId,
           order.source,
           order.sourceOrderId,
           order.customerName,
@@ -359,12 +378,20 @@ export async function seedIfEmpty() {
   const { rows } = await query<{ count: string }>(`select count(*)::int as count from coffees`);
   if (Number(rows[0]?.count ?? 0) > 0) return;
 
+  const sessionId = makeId("session");
+  const sessionDate = new Date().toISOString().slice(0, 10);
   const brazil = { id: "coffee_brazil", name: "Brazil Serra Negra", roast_loss_percentage: 18 };
   const colombia = { id: "coffee_colombia", name: "Colombia Huila", roast_loss_percentage: 16 };
   const guatemala = { id: "coffee_guatemala", name: "Guatemala Huehue", roast_loss_percentage: 17.5 };
   const honduras = { id: "coffee_honduras", name: "Honduras Comayagua", roast_loss_percentage: 17 };
 
   await withTransaction(async ({ query }) => {
+    await query(
+      `insert into roast_sessions (id, session_date, created_at, updated_at)
+       values ($1,$2,$3,$3)`,
+      [sessionId, sessionDate, nowIso()],
+    );
+
     for (const coffee of [brazil, colombia, guatemala, honduras]) {
       await query(
         `insert into coffees (id, name, roast_loss_percentage, active)
@@ -465,6 +492,7 @@ export async function seedIfEmpty() {
     const orders: Order[] = [
       {
         id: "order_1012",
+        roastSessionId: sessionId,
         source: "shopify",
         sourceOrderId: "#1012",
         customerName: "John Smith",
@@ -496,6 +524,7 @@ export async function seedIfEmpty() {
       },
       {
         id: "order_1013",
+        roastSessionId: sessionId,
         source: "shopify",
         sourceOrderId: "#1013",
         customerName: "Sarah L",
@@ -527,6 +556,7 @@ export async function seedIfEmpty() {
       },
       {
         id: "order_1014",
+        roastSessionId: sessionId,
         source: "shopify",
         sourceOrderId: "#1014",
         customerName: "Taylor Coffee",
@@ -560,10 +590,11 @@ export async function seedIfEmpty() {
 
     for (const order of orders) {
       await query(
-        `insert into orders (id, source, source_order_id, customer_name, status, created_at, updated_at)
-         values ($1,$2,$3,$4,$5,$6,$7)`,
+        `insert into orders (id, roast_session_id, source, source_order_id, customer_name, status, created_at, updated_at)
+         values ($1,$2,$3,$4,$5,$6,$7,$8)`,
         [
           order.id,
+          order.roastSessionId,
           order.source,
           order.sourceOrderId,
           order.customerName,
