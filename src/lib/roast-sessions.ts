@@ -3,25 +3,46 @@ import {
   createRoastSession,
   fetchBlends,
   fetchCoffees,
-  fetchLatestSession,
   fetchOnHand,
   fetchOrders,
   fetchSessionById,
+  importOrders,
   listSessions,
   updateOrderStatus,
   upsertOnHand,
 } from "./repository";
+import { mapShopifyOrdersToInternal } from "./order-mapper";
+import { fetchUnfulfilledOrders } from "./shopify";
 import type { RoastSession } from "./types";
 
-export async function getOrCreateLatestSession() {
-  const existing = await fetchLatestSession();
+const ACTIVE_SESSION_ID = "session_current";
+
+async function getOrCreateActiveSession() {
+  const existing = await fetchSessionById(ACTIVE_SESSION_ID);
   if (existing) return existing;
-  return createRoastSession();
+  return createRoastSession(new Date().toISOString().slice(0, 10), ACTIVE_SESSION_ID);
+}
+
+export async function syncOrdersFromShopify() {
+  const result = await fetchUnfulfilledOrders();
+  if (result.error) return { imported: 0, error: result.error };
+
+  const mappedOrders = await mapShopifyOrdersToInternal(result.orders);
+  await importOrders(mappedOrders);
+  return { imported: mappedOrders.length };
+}
+
+export async function getRoastPlan() {
+  await syncOrdersFromShopify();
+  return getSessionWithComputation();
 }
 
 export async function getSessionWithComputation(id?: string): Promise<RoastSession | null> {
-  const baseSession = id ? await fetchSessionById(id) : await getOrCreateLatestSession();
+  const baseSession = id ? await fetchSessionById(id) : await getOrCreateActiveSession();
   if (!baseSession) return null;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const normalizedSession = { ...baseSession, sessionDate: today };
 
   const [coffees, blends, onHand, orders] = await Promise.all([
     fetchCoffees(),
@@ -38,7 +59,7 @@ export async function getSessionWithComputation(id?: string): Promise<RoastSessi
   });
 
   return {
-    ...baseSession,
+    ...normalizedSession,
     onHand: computation.onHand,
     orders,
     computation,

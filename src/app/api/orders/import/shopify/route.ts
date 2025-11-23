@@ -6,10 +6,7 @@ import { getSessionWithComputation } from "@/lib/roast-sessions";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const sessionId = searchParams.get("sessionId") ?? undefined;
-
+export async function POST(_request: Request) {
   const result = await fetchUnfulfilledOrders();
   if (result.error) {
     return NextResponse.json(
@@ -20,7 +17,7 @@ export async function POST(request: Request) {
 
   const mappedOrders = await mapShopifyOrdersToInternal(result.orders);
   await importOrders(mappedOrders);
-  const session = sessionId ? await getSessionWithComputation(sessionId) : undefined;
+  const session = await getSessionWithComputation();
   return NextResponse.json(
     {
       source: "shopify",

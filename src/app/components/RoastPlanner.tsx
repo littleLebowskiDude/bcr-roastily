@@ -150,10 +150,10 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
       <section className="grid gap-4 md:grid-cols-3">
         <div className="rounded-3xl bg-white/80 p-5 shadow-sm ring-1 ring-slate-100 backdrop-blur">
           <p className="text-xs uppercase tracking-[0.2em] text-emerald-700">
-            Session date
+            Planning date
           </p>
           <p className="text-3xl font-semibold text-slate-900">{sessionDate}</p>
-          <p className="text-xs text-slate-500">Auto-created every Monday</p>
+          <p className="text-xs text-slate-500">Syncs unfulfilled Shopify orders on load</p>
         </div>
         <div className="rounded-3xl bg-white/80 p-5 shadow-sm ring-1 ring-slate-100 backdrop-blur">
           <p className="text-xs uppercase tracking-[0.2em] text-emerald-700">
@@ -173,10 +173,10 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
         </div>
       </section>
 
-      <SectionCard
-        title="Shopify import"
-        subtitle="Pull unfulfilled Shopify orders, map variants, and persist them to this session."
-      >
+        <SectionCard
+          title="Shopify import"
+          subtitle="Pull unfulfilled Shopify orders, map variants, and persist them to the current plan."
+        >
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1">
             <p className="text-sm text-slate-700">
@@ -196,7 +196,7 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
               onClick={refreshSession}
               className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300"
             >
-              Recalculate session
+              Recalculate plan
             </button>
           </div>
         </div>
@@ -205,7 +205,7 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
 
       <SectionCard
         title="Orders"
-        subtitle="Tap to skip a specific order for this roast session."
+        subtitle="Tap to skip a specific order for this roast."
       >
         <div className="divide-y divide-slate-100">
           {data.orders.map((order) => (
@@ -362,7 +362,7 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
             </div>
           ))}
           {computation?.blendBuckets.length === 0 ? (
-            <p className="text-sm text-slate-500">No blends in this session.</p>
+            <p className="text-sm text-slate-500">No blends in this plan.</p>
           ) : null}
         </div>
       </SectionCard>

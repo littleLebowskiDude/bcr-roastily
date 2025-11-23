@@ -1,14 +1,13 @@
 import { RoastPlanner } from "./components/RoastPlanner";
-import { getSessionWithComputation, getOrCreateLatestSession } from "@/lib/roast-sessions";
+import { getRoastPlan } from "@/lib/roast-sessions";
 import { fetchSettingsSnapshot, seedIfEmpty } from "@/lib/repository";
 
 export const revalidate = 0;
 
 export default async function Home() {
   await seedIfEmpty();
-  const latest = await getOrCreateLatestSession();
   const [session, settings] = await Promise.all([
-    getSessionWithComputation(latest.id),
+    getRoastPlan(),
     fetchSettingsSnapshot(),
   ]);
 
@@ -16,10 +15,8 @@ export default async function Home() {
     return (
       <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-slate-50 px-6 py-12 text-slate-900">
         <div className="mx-auto max-w-6xl rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
-          <p className="text-sm font-semibold text-slate-900">No roast session found.</p>
-          <p className="text-sm text-slate-600">
-            Create a session with POST /api/roast-sessions.
-          </p>
+          <p className="text-sm font-semibold text-slate-900">No roast plan available.</p>
+          <p className="text-sm text-slate-600">Reload to sync unfulfilled Shopify orders.</p>
         </div>
       </main>
     );
