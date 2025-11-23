@@ -5,7 +5,7 @@ import { listSessionsWithTotals } from "@/lib/roast-sessions";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const sessions = listSessionsWithTotals();
+  const sessions = await listSessionsWithTotals();
   return NextResponse.json({ sessions });
 }
 
