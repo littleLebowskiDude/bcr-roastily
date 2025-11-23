@@ -307,6 +307,7 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
       <SectionCard
         title="Roast schedule"
         subtitle="Full 5 kg green batches only. Surplus automatically moves to on-hand."
+        defaultOpen
       >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
