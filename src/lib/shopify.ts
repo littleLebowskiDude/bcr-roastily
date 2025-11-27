@@ -1,9 +1,16 @@
 import "server-only";
 
 type ShopifyCustomer = {
+  id?: number;
   first_name?: string | null;
   last_name?: string | null;
   email?: string | null;
+};
+
+type ShopifyAddress = {
+  first_name?: string | null;
+  last_name?: string | null;
+  name?: string | null;
 };
 
 type ShopifyLineItem = {
@@ -21,6 +28,8 @@ type ShopifyOrder = {
   current_total_price: string;
   currency: string;
   customer?: ShopifyCustomer | null;
+  billing_address?: ShopifyAddress | null;
+  shipping_address?: ShopifyAddress | null;
   line_items: ShopifyLineItem[];
   financial_status?: string | null;
   fulfillment_status?: string | null;
@@ -55,10 +64,24 @@ const storeDomain = process.env.SHOPIFY_STORE_DOMAIN;
 const accessToken = process.env.SHOPIFY_ADMIN_API_ACCESS_TOKEN;
 const apiVersion = process.env.SHOPIFY_API_VERSION ?? "2024-07";
 
-const formatCustomerName = (customer?: ShopifyCustomer | null) => {
-  if (!customer) return "Guest checkout";
-  const names = [customer.first_name, customer.last_name].filter(Boolean);
+const formatAddressName = (address?: ShopifyAddress | null) => {
+  if (!address) return null;
+  if (address.name) return address.name;
+  const parts = [address.first_name, address.last_name].filter(Boolean);
+  return parts.length ? parts.join(" ") : null;
+};
+
+const formatCustomerName = (order: ShopifyOrder) => {
+  const customer = order.customer;
+  const names = [customer?.first_name, customer?.last_name].filter(Boolean);
   if (names.length) return names.join(" ");
+
+  const shippingName = formatAddressName(order.shipping_address);
+  if (shippingName) return shippingName;
+
+  const billingName = formatAddressName(order.billing_address);
+  if (billingName) return billingName;
+
   return "Guest checkout";
 };
 
@@ -78,7 +101,7 @@ export async function fetchUnfulfilledOrders(): Promise<ShopifyFetchResult> {
     limit: "250",
     order: "created_at desc",
     fields:
-      "id,name,created_at,current_total_price,currency,customer,line_items,financial_status,fulfillment_status",
+      "id,name,created_at,current_total_price,currency,customer,billing_address,shipping_address,line_items,financial_status,fulfillment_status",
   });
 
   const endpoint = `https://${storeDomain}/admin/api/${apiVersion}/orders.json?${query.toString()}`;
@@ -110,7 +133,7 @@ export async function fetchUnfulfilledOrders(): Promise<ShopifyFetchResult> {
         id: order.id,
         name: order.name,
         createdAt: order.created_at,
-        customerName: formatCustomerName(order.customer),
+        customerName: formatCustomerName(order),
         email: order.customer?.email ?? undefined,
         totalPrice: order.current_total_price,
         currency: order.currency,
