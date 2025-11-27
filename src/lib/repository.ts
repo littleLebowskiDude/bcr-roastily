@@ -237,6 +237,92 @@ export async function importOrders(orders: Order[]) {
   });
 }
 
+export async function syncShopifyOrders(orders: Order[]) {
+  await ensureSchema();
+  await withTransaction(async ({ query }) => {
+    // 1. Upsert incoming orders
+    for (const order of orders) {
+      await query(
+        `insert into orders (id, source, source_order_id, customer_name, status, created_at, updated_at)
+         values ($1, $2, $3, $4, $5, $6, $7)
+         on conflict (id) do update
+         set customer_name = excluded.customer_name,
+             updated_at = excluded.updated_at`,
+        [
+          order.id,
+          order.source,
+          order.sourceOrderId,
+          order.customerName,
+          order.status,
+          order.createdAt,
+          order.updatedAt,
+        ],
+      );
+
+      const seenItemIds: string[] = [];
+      for (const item of order.items) {
+        await query(
+          `insert into order_items (id, order_id, variant_id, product_name, size_g, grind_type, quantity, mapped_coffee_id, mapped_is_blend)
+           values ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+           on conflict (id) do update
+           set product_name = excluded.product_name,
+               size_g = excluded.size_g,
+               grind_type = excluded.grind_type,
+               quantity = excluded.quantity,
+               mapped_coffee_id = excluded.mapped_coffee_id,
+               mapped_is_blend = excluded.mapped_is_blend`,
+          [
+            item.id,
+            order.id,
+            item.variantId,
+            item.productName,
+            item.sizeG,
+            item.grindType,
+            item.quantity,
+            item.mappedCoffeeId,
+            item.mappedIsBlend,
+          ],
+        );
+        seenItemIds.push(item.id);
+      }
+
+      if (seenItemIds.length === 0) {
+        await query(`delete from order_items where order_id = $1`, [order.id]);
+      } else {
+        const placeholders = seenItemIds.map((_, index) => `$${index + 2}`).join(", ");
+        await query(
+          `delete from order_items where order_id = $1 and id not in (${placeholders})`,
+          [order.id, ...seenItemIds],
+        );
+      }
+    }
+
+    // 2. Delete orders that are not in the incoming list but are from shopify
+    if (orders.length === 0) {
+      // If no orders returned, delete ALL shopify orders
+      await query(`delete from order_items where order_id in (select id from orders where source = 'shopify')`);
+      await query(`delete from orders where source = 'shopify'`);
+    } else {
+      const orderIds = orders.map((o) => o.id);
+      const placeholders = orderIds.map((_, index) => `$${index + 1}`).join(", ");
+
+      // Delete items for orders to be deleted
+      await query(
+        `delete from order_items where order_id in (
+           select id from orders where source = 'shopify' and id not in (${placeholders})
+         )`,
+        [...orderIds]
+      );
+
+      // Delete the orders
+      await query(
+        `delete from orders where source = 'shopify' and id not in (${placeholders})`,
+        [...orderIds]
+      );
+    }
+  });
+}
+
 export async function updateOrderStatus(orderId: string, status: "included" | "skipped") {
   await ensureSchema();
   await query(

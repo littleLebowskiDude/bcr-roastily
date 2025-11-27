@@ -23,6 +23,7 @@ type ShopifyOrder = {
   customer?: ShopifyCustomer | null;
   line_items: ShopifyLineItem[];
   financial_status?: string | null;
+  fulfillment_status?: string | null;
 };
 
 export type ShopifyOrderSummary = {
@@ -74,10 +75,10 @@ export async function fetchUnfulfilledOrders(): Promise<ShopifyFetchResult> {
   const query = new URLSearchParams({
     status: "open",
     fulfillment_status: "unfulfilled",
-    limit: "50",
+    limit: "250",
     order: "created_at desc",
     fields:
-      "id,name,created_at,current_total_price,currency,customer,line_items,financial_status",
+      "id,name,created_at,current_total_price,currency,customer,line_items,financial_status,fulfillment_status",
   });
 
   const endpoint = `https://${storeDomain}/admin/api/${apiVersion}/orders.json?${query.toString()}`;
@@ -95,17 +96,17 @@ export async function fetchUnfulfilledOrders(): Promise<ShopifyFetchResult> {
       const body = await response.text();
       return {
         orders: [],
-        error: `Shopify responded with ${response.status}: ${
-          body || response.statusText
-        }`,
+        error: `Shopify responded with ${response.status}: ${body || response.statusText
+          }`,
         status: response.status,
       };
     }
 
     const payload = (await response.json()) as { orders: ShopifyOrder[] };
 
-    const orders: ShopifyOrderSummary[] = (payload.orders || []).map(
-      (order) => ({
+    const orders: ShopifyOrderSummary[] = (payload.orders || [])
+      .filter((order) => order.fulfillment_status === null || order.fulfillment_status === "partial")
+      .map((order) => ({
         id: order.id,
         name: order.name,
         createdAt: order.created_at,
@@ -125,8 +126,7 @@ export async function fetchUnfulfilledOrders(): Promise<ShopifyFetchResult> {
           quantity: item.quantity,
           grindType: item.variant_title ?? "Whole bean",
         })),
-      }),
-    );
+      }));
 
     return { orders };
   } catch (error) {
