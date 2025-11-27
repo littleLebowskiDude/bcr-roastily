@@ -7,6 +7,7 @@ import {
   fetchOrders,
   fetchSessionById,
   importOrders,
+  syncShopifyOrders,
   listSessions,
   updateOrderStatus,
   upsertOnHand,
@@ -28,7 +29,7 @@ export async function syncOrdersFromShopify() {
   if (result.error) return { imported: 0, error: result.error };
 
   const mappedOrders = await mapShopifyOrdersToInternal(result.orders);
-  await importOrders(mappedOrders);
+  await syncShopifyOrders(mappedOrders);
   return { imported: mappedOrders.length };
 }
 
