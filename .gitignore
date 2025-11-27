@@ -27,6 +27,14 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env
+
+# temporary debug and utility files
+debug_output.json
+debug_after_mapping.json
+check_orders.ts
+create_mappings.ps1
+MAPPINGS_NEEDED.md
 
 # vercel
 .vercel

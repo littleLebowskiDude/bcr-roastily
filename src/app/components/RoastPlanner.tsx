@@ -4,6 +4,8 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { SectionCard } from "./SectionCard";
+import { UnmappedVariantsAlert } from "./UnmappedVariantsAlert";
+import { collectUnmappedOrderItems } from "@/lib/unmapped";
 import type { Coffee, OnHandStock, Order, RoastSession } from "@/lib/types";
 
 type Props = {
@@ -145,8 +147,22 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
     return String(raw);
   })();
 
+  // Detect unmapped variants
+  const unmappedItems = useMemo(
+    () => collectUnmappedOrderItems(data.orders),
+    [data.orders],
+  );
+  const unmappedByOrderId = useMemo(() => {
+    const map = new Map<string, number>();
+    unmappedItems.forEach((item) => {
+      map.set(item.orderId, (map.get(item.orderId) ?? 0) + item.quantity);
+    });
+    return map;
+  }, [unmappedItems]);
+
   return (
     <div className="space-y-6">
+      <UnmappedVariantsAlert unmappedItems={unmappedItems} />
       <section className="grid gap-4 md:grid-cols-3">
         <div className="rounded-3xl bg-white/80 p-5 shadow-sm ring-1 ring-slate-100 backdrop-blur">
           <p className="text-xs uppercase tracking-[0.2em] text-emerald-700">
@@ -173,10 +189,10 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
         </div>
       </section>
 
-        <SectionCard
-          title="Shopify import"
-          subtitle="Pull unfulfilled Shopify orders, map variants, and persist them to the current plan."
-        >
+      <SectionCard
+        title="Shopify import"
+        subtitle="Pull unfulfilled Shopify orders, map variants, and persist them to the current plan."
+      >
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1">
             <p className="text-sm text-slate-700">
@@ -207,35 +223,59 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
         title="Orders"
         subtitle="Tap to skip a specific order for this roast."
       >
-        <div className="divide-y divide-slate-100">
-          {data.orders.map((order) => (
-            <article
-              key={order.id}
-              className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div>
-                <p className="text-sm font-semibold text-slate-900">
-                  {order.sourceOrderId} — {order.customerName}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {order.items.length} items • {new Date(order.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-              <button
-                onClick={() => handleOrderToggle(order)}
-                className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition ${
-                  order.status === "skipped"
-                    ? "bg-amber-100 text-amber-900 hover:bg-amber-200"
-                    : "bg-emerald-600 text-white hover:bg-emerald-500"
-                }`}
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          {unmappedItems.length ? (
+            <>
+              <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+                {unmappedItems.length} unmapped item{unmappedItems.length === 1 ? "" : "s"} detected
+              </span>
+              <a
+                href="#unmapped-variants"
+                className="text-xs font-semibold text-amber-700 underline decoration-amber-400 underline-offset-2"
               >
-                {order.status === "skipped" ? "Skipped" : "Included"}
-              </button>
-            </article>
-          ))}
+                Review missing mappings
+              </a>
+            </>
+          ) : (
+            <span className="text-xs text-emerald-700">All imported items are mapped.</span>
+          )}
+        </div>
+        <div className="divide-y divide-slate-100">
+          {data.orders.map((order) => {
+            const unmappedCount = unmappedByOrderId.get(order.id);
+            return (
+              <article
+                key={order.id}
+                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {order.sourceOrderId} - {order.customerName}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {order.items.length} items | {new Date(order.createdAt).toLocaleDateString()}
+                  </p>
+                  {typeof unmappedCount === "number" ? (
+                    <p className="text-xs text-amber-700">
+                      Missing mappings for {unmappedCount} item{unmappedCount === 1 ? "" : "s"} in this order.
+                    </p>
+                  ) : null}
+                </div>
+                <button
+                  onClick={() => handleOrderToggle(order)}
+                  className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition ${
+                    order.status === "skipped"
+                      ? "bg-amber-100 text-amber-900 hover:bg-amber-200"
+                      : "bg-emerald-600 text-white hover:bg-emerald-500"
+                  }`}
+                >
+                  {order.status === "skipped" ? "Skipped" : "Included"}
+                </button>
+              </article>
+            );
+          })}
         </div>
       </SectionCard>
-
       <SectionCard
         title="On-hand roasted stock"
         subtitle="Use these buckets before scheduling new drops."
