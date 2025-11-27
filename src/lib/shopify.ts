@@ -5,6 +5,7 @@ type ShopifyCustomer = {
   first_name?: string | null;
   last_name?: string | null;
   email?: string | null;
+  default_address?: ShopifyAddress | null;
 };
 
 type ShopifyAddress = {
@@ -66,15 +67,24 @@ const apiVersion = process.env.SHOPIFY_API_VERSION ?? "2024-07";
 
 const formatAddressName = (address?: ShopifyAddress | null) => {
   if (!address) return null;
-  if (address.name) return address.name;
-  const parts = [address.first_name, address.last_name].filter(Boolean);
+  if (address.name?.trim()) return address.name.trim();
+  const parts = [address.first_name, address.last_name]
+    .filter(Boolean)
+    .map((part) => part!.trim())
+    .filter(Boolean);
   return parts.length ? parts.join(" ") : null;
 };
 
 const formatCustomerName = (order: ShopifyOrder) => {
   const customer = order.customer;
-  const names = [customer?.first_name, customer?.last_name].filter(Boolean);
+  const names = [customer?.first_name, customer?.last_name]
+    .filter(Boolean)
+    .map((part) => part!.trim())
+    .filter(Boolean);
   if (names.length) return names.join(" ");
+
+  const customerDefaultName = formatAddressName(customer?.default_address);
+  if (customerDefaultName) return customerDefaultName;
 
   const shippingName = formatAddressName(order.shipping_address);
   if (shippingName) return shippingName;
