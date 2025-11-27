@@ -17,8 +17,11 @@ type Props = {
   };
 };
 
-const formatKg = (value: number) => `${(value / 1000).toFixed(1)} kg`;
-const formatG = (value: number) => `${Math.round(value).toLocaleString()} g`;
+const formatKg = (value: number) =>
+  `${(value / 1000).toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 3,
+  })} kg`;
 
 export function RoastPlanner({ session, settings: initialSettings }: Props) {
   const router = useRouter();
@@ -292,11 +295,12 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
                   <input
                     type="number"
                     min={0}
-                    value={onHandDraft[`coffee:${item.bucketId}`] ?? 0}
+                    step={0.01}
+                    value={(onHandDraft[`coffee:${item.bucketId}`] ?? 0) / 1000}
                     onChange={(event) =>
                       setOnHandDraft((prev) => ({
                         ...prev,
-                        [`coffee:${item.bucketId}`]: Number(event.target.value),
+                        [`coffee:${item.bucketId}`]: Number(event.target.value) * 1000,
                       }))
                     }
                     className="w-32 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
@@ -317,11 +321,12 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
                   <input
                     type="number"
                     min={0}
-                    value={onHandDraft[`blend:${item.bucketId}`] ?? 0}
+                    step={0.01}
+                    value={(onHandDraft[`blend:${item.bucketId}`] ?? 0) / 1000}
                     onChange={(event) =>
                       setOnHandDraft((prev) => ({
                         ...prev,
-                        [`blend:${item.bucketId}`]: Number(event.target.value),
+                        [`blend:${item.bucketId}`]: Number(event.target.value) * 1000,
                       }))
                     }
                     className="w-32 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
@@ -372,11 +377,11 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
                       </span>
                     ) : null}
                   </td>
-                  <td className="px-3 py-3 text-slate-700">{formatG(result.roastedNeededG)}</td>
-                  <td className="px-3 py-3 text-slate-700">{formatG(result.greenRequiredG)}</td>
+                  <td className="px-3 py-3 text-slate-700">{formatKg(result.roastedNeededG)}</td>
+                  <td className="px-3 py-3 text-slate-700">{formatKg(result.greenRequiredG)}</td>
                   <td className="px-3 py-3 text-slate-700">{result.dropsRequired}</td>
-                  <td className="px-3 py-3 text-slate-700">{formatG(result.expectedRoastedG)}</td>
-                  <td className="px-3 py-3 text-slate-700">{formatG(result.surplusG)}</td>
+                  <td className="px-3 py-3 text-slate-700">{formatKg(result.expectedRoastedG)}</td>
+                  <td className="px-3 py-3 text-slate-700">{formatKg(result.surplusG)}</td>
                 </tr>
               ))}
             </tbody>
@@ -394,11 +399,11 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-slate-900">{blend.blendName}</p>
                 <span className="text-xs text-slate-500">
-                  Surplus: {formatG(blend.surplusG)}
+                  Surplus: {formatKg(blend.surplusG)}
                 </span>
               </div>
               <p className="text-xs text-slate-600">
-                Required {formatG(blend.requiredRoastedG)} → Actual {formatG(blend.actualRoastedG)}
+                Required {formatKg(blend.requiredRoastedG)} → Actual {formatKg(blend.actualRoastedG)}
               </p>
             </div>
           ))}
@@ -415,13 +420,13 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
               <div>
                 <p className="text-sm font-semibold text-slate-900">{line.label}</p>
                 <p className="text-xs text-slate-500">
-                  {line.sizeG} g • {line.grindType}
+                  {formatKg(line.sizeG)} • {line.grindType}
                 </p>
               </div>
               <div className="flex items-center gap-3 text-sm text-slate-700">
                 <span>{line.quantity} bags</span>
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                  {formatG(line.totalRoastedG)}
+                  {formatKg(line.totalRoastedG)}
                 </span>
               </div>
             </div>

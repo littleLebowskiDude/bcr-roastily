@@ -1,7 +1,11 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { BaggingLine, RoastComputation } from "./types";
 
-const formatWeight = (value: number) => `${Math.round(value)} g`;
+const formatWeight = (value: number) =>
+  `${(value / 1000).toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 3,
+  })} kg`;
 
 const addTitle = async (doc: PDFDocument, pageIndex: number, title: string) => {
   const page = doc.getPage(pageIndex);
