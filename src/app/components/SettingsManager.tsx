@@ -18,6 +18,12 @@ type MappingForm = {
   grindType: string;
 };
 
+const formatKg = (value: number) =>
+  `${(value / 1000).toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 3,
+  })} kg`;
+
 export function SettingsManager({ initialSettings }: { initialSettings: SettingsSnapshot }) {
   const [settings, setSettings] = useState(initialSettings);
 
@@ -264,7 +270,7 @@ export function SettingsManager({ initialSettings }: { initialSettings: Settings
                       {mapping.isBlend
                         ? blendNameById.get(mapping.coffeeId) ?? mapping.coffeeId
                         : coffeeNameById.get(mapping.coffeeId) ?? mapping.coffeeId}{" "}
-                      - {mapping.sizeG} g -{" "}
+                      - {formatKg(mapping.sizeG)} -{" "}
                       {mapping.grindType}
                     </p>
                   </div>
@@ -350,15 +356,16 @@ export function SettingsManager({ initialSettings }: { initialSettings: Settings
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  Size (g)
+                  Size (kg)
                   <input
                     type="number"
                     min={0}
-                    value={mappingForm.sizeG}
+                    step={0.01}
+                    value={mappingForm.sizeG / 1000}
                     onChange={(event) =>
                       setMappingForm((prev) => ({
                         ...prev,
-                        sizeG: Number(event.target.value),
+                        sizeG: Number(event.target.value) * 1000,
                       }))
                     }
                     className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
