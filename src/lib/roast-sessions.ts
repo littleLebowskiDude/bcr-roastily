@@ -62,7 +62,9 @@ export async function getSessionWithComputation(id?: string): Promise<RoastSessi
 
   return {
     ...normalizedSession,
-    onHand: computation.onHand,
+    // Expose the persisted on-hand values so the UI can edit them without
+    // being clobbered by the computed balances that already deduct orders.
+    onHand,
     orders,
     computation,
     lastCalculatedAt: new Date().toISOString(),

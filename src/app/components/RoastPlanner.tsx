@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { SectionCard } from "./SectionCard";
 import { UnmappedVariantsAlert } from "./UnmappedVariantsAlert";
 import { collectUnmappedOrderItems } from "@/lib/unmapped";
@@ -39,6 +39,14 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
   const settings = initialSettings;
 
   const computation = data.computation;
+
+  useEffect(() => {
+    const draft: Record<string, number> = {};
+    data.onHand.forEach((item) => {
+      draft[`${item.bucketType}:${item.bucketId}`] = item.onHandRoastedG;
+    });
+    setOnHandDraft(draft);
+  }, [data.onHand]);
 
   const roastTotals = computation?.totals ?? {
     roastedRequiredG: 0,
