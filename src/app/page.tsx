@@ -1,4 +1,5 @@
 import { RoastPlanner } from "./components/RoastPlanner";
+import { SyncButton } from "./components/SyncButton";
 import { getRoastPlan } from "@/lib/roast-sessions";
 import { fetchSettingsSnapshot, seedIfEmpty } from "@/lib/repository";
 import { collectUnmappedOrderItems } from "@/lib/unmapped";
@@ -71,6 +72,7 @@ export default async function Home() {
             </div>
             <div className="flex flex-col items-end gap-3 text-right">
               <div className="flex items-center gap-2">
+                <SyncButton />
                 <a
                   href="/settings"
                   className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-white/20"

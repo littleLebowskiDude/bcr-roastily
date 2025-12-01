@@ -34,7 +34,8 @@ export async function syncOrdersFromShopify() {
 }
 
 export async function getRoastPlan() {
-  await syncOrdersFromShopify();
+  // Removed automatic sync to improve performance
+  // await syncOrdersFromShopify();
   return getSessionWithComputation();
 }
 

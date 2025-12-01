@@ -1,5 +1,7 @@
 import "server-only";
 import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
+import * as schema from "./db/schema";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -16,11 +18,11 @@ const pool =
   global._dbPool ??
   (connectionString
     ? new Pool({
-        connectionString,
-        max: 5,
-        idleTimeoutMillis: 30_000,
-        connectionTimeoutMillis: 5_000,
-      })
+      connectionString,
+      max: 5,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 5_000,
+    })
     : undefined);
 
 if (process.env.NODE_ENV !== "production" && pool) {
@@ -33,6 +35,8 @@ export function getDbPool() {
   }
   return pool;
 }
+
+export const db = pool ? drizzle(pool, { schema }) : ({} as ReturnType<typeof drizzle>);
 
 export async function pingDatabase() {
   const client = await getDbPool().connect();
