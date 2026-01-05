@@ -4,10 +4,11 @@ import { buildRoastingPdf } from "@/lib/pdf";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, context: RouteContext) {
-  const session = await getSessionWithComputation(context.params.id);
+  const { id } = await context.params;
+  const session = await getSessionWithComputation(id);
   if (!session || !session.computation) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }

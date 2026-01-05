@@ -3,9 +3,10 @@ import { archiveCoffee, fetchSettingsSnapshot, updateCoffee } from "@/lib/reposi
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PUT(request: Request, context: RouteContext) {
+  const { id } = await context.params;
   const body = await request.json().catch(() => ({}));
   const name = typeof body.name === "string" && body.name.trim().length > 0 ? body.name.trim() : null;
   const roastLossPercentage =
@@ -22,7 +23,7 @@ export async function PUT(request: Request, context: RouteContext) {
     );
   }
 
-  await updateCoffee(context.params.id, {
+  await updateCoffee(id, {
     name,
     roastLossPercentage,
     costPerKg: Number.isNaN(costPerKg) ? undefined : costPerKg,
@@ -33,7 +34,8 @@ export async function PUT(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
-  await archiveCoffee(context.params.id);
+  const { id } = await context.params;
+  await archiveCoffee(id);
   const settings = await fetchSettingsSnapshot();
   return NextResponse.json({ settings });
 }

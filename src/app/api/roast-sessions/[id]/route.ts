@@ -3,10 +3,11 @@ import { getSessionWithComputation, saveOnHand, toggleOrder } from "@/lib/roast-
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, context: RouteContext) {
-  const session = await getSessionWithComputation(context.params.id);
+  const { id } = await context.params;
+  const session = await getSessionWithComputation(id);
   if (!session) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
@@ -14,8 +15,8 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function POST(request: Request, context: RouteContext) {
+  const { id: sessionId } = await context.params;
   const body = await request.json().catch(() => ({}));
-  const sessionId = context.params.id;
 
   if (body.orderId && body.status) {
     await toggleOrder(sessionId, body.orderId, body.status);

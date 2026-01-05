@@ -4,9 +4,10 @@ import type { BlendComponent } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PUT(request: Request, context: RouteContext) {
+  const { id } = await context.params;
   const body = await request.json().catch(() => ({}));
   const name = typeof body.name === "string" && body.name.trim().length > 0 ? body.name.trim() : null;
   const components: BlendComponent[] = Array.isArray(body.components)
@@ -30,13 +31,14 @@ export async function PUT(request: Request, context: RouteContext) {
     );
   }
 
-  await updateBlend(context.params.id, { name, components });
+  await updateBlend(id, { name, components });
   const settings = await fetchSettingsSnapshot();
   return NextResponse.json({ settings });
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
-  await archiveBlend(context.params.id);
+  const { id } = await context.params;
+  await archiveBlend(id);
   const settings = await fetchSettingsSnapshot();
   return NextResponse.json({ settings });
 }
