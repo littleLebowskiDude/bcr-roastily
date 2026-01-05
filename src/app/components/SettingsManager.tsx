@@ -252,38 +252,40 @@ export function SettingsManager({ initialSettings }: { initialSettings: Settings
         subtitle="Link Shopify variant IDs to coffees or blends, sizes, and grind types."
       >
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+          <div className="rounded-xl bg-linen-100 p-5">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-slate-800">Existing mappings</p>
-              <span className="text-xs text-slate-500">{settings.variantMappings.length} total</span>
+              <p className="font-semibold text-espresso-800">Existing mappings</p>
+              <span className="rounded-md bg-espresso-100 px-2 py-1 text-xs font-semibold text-espresso-600">
+                {settings.variantMappings.length} total
+              </span>
             </div>
-            <div className="mt-3 divide-y divide-slate-200">
+            <div className="mt-4 divide-y divide-espresso-200">
               {settings.variantMappings.map((mapping) => (
                 <div
                   key={mapping.variantId}
-                  className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">{mapping.variantId}</p>
-                    <p className="text-xs text-slate-500">
-                      {mapping.isBlend ? "Blend" : "Coffee"} -{" "}
+                    <p className="font-semibold text-espresso-900">{mapping.variantId}</p>
+                    <p className="mt-0.5 text-sm text-espresso-500">
+                      {mapping.isBlend ? "Blend" : "Coffee"} ·{" "}
                       {mapping.isBlend
                         ? blendNameById.get(mapping.coffeeId) ?? mapping.coffeeId
                         : coffeeNameById.get(mapping.coffeeId) ?? mapping.coffeeId}{" "}
-                      - {formatKg(mapping.sizeG)} -{" "}
+                      · {formatKg(mapping.sizeG)} ·{" "}
                       {mapping.grindType}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleMappingPrefill(mapping)}
-                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-800 transition hover:border-slate-300"
+                      className="rounded-lg border border-espresso-200 bg-white px-3 py-1.5 text-xs font-semibold text-espresso-700 transition-warm hover:border-espresso-300 hover:bg-espresso-50"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleMappingDelete(mapping.variantId)}
-                      className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800"
+                      className="rounded-lg bg-espresso-900 px-3 py-1.5 text-xs font-semibold text-white shadow-warm transition-warm hover:bg-espresso-800"
                     >
                       Delete
                     </button>
@@ -291,22 +293,24 @@ export function SettingsManager({ initialSettings }: { initialSettings: Settings
                 </div>
               ))}
               {settings.variantMappings.length === 0 ? (
-                <p className="py-3 text-sm text-slate-500">No mappings yet.</p>
+                <p className="py-4 text-sm text-espresso-500">No mappings yet.</p>
               ) : null}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-sm font-semibold text-slate-900">Add / edit mapping</p>
-            <div className="mt-3 space-y-3">
-              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600">
-                Shopify variant ID
+          <div className="rounded-xl border border-espresso-100 bg-white p-5 shadow-warm">
+            <p className="font-semibold text-espresso-900">Add / edit mapping</p>
+            <div className="mt-4 space-y-4">
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-[0.1em] text-espresso-600">
+                  Shopify variant ID
+                </span>
                 <input
                   value={mappingForm.variantId}
                   onChange={(event) =>
                     setMappingForm((prev) => ({ ...prev, variantId: event.target.value }))
                   }
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  className="input-field mt-1.5"
                   placeholder="gid://shopify/ProductVariant/123456"
                 />
               </label>
@@ -314,28 +318,30 @@ export function SettingsManager({ initialSettings }: { initialSettings: Settings
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleMappingTypeChange(false)}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition-warm ${
                     mappingForm.isBlend
-                      ? "border border-slate-200 text-slate-700"
-                      : "bg-emerald-100 text-emerald-800"
+                      ? "border border-espresso-200 text-espresso-600 hover:bg-espresso-50"
+                      : "bg-sienna-100 text-sienna-800"
                   }`}
                 >
                   Coffee
                 </button>
                 <button
                   onClick={() => handleMappingTypeChange(true)}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition-warm ${
                     mappingForm.isBlend
-                      ? "bg-slate-900 text-white"
-                      : "border border-slate-200 text-slate-700"
+                      ? "bg-espresso-900 text-white"
+                      : "border border-espresso-200 text-espresso-600 hover:bg-espresso-50"
                   }`}
                 >
                   Blend
                 </button>
               </div>
 
-              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600">
-                Target
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-[0.1em] text-espresso-600">
+                  Target
+                </span>
                 <select
                   value={mappingForm.coffeeId}
                   onChange={(event) =>
@@ -344,7 +350,7 @@ export function SettingsManager({ initialSettings }: { initialSettings: Settings
                       coffeeId: event.target.value,
                     }))
                   }
-                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                  className="input-field mt-1.5"
                 >
                   {(mappingForm.isBlend ? settings.blends : settings.coffees).map((option) => (
                     <option key={option.id} value={option.id}>
@@ -354,9 +360,11 @@ export function SettingsManager({ initialSettings }: { initialSettings: Settings
                 </select>
               </label>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  Size (kg)
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-xs font-semibold uppercase tracking-[0.1em] text-espresso-600">
+                    Size (kg)
+                  </span>
                   <input
                     type="number"
                     min={0}
@@ -368,17 +376,19 @@ export function SettingsManager({ initialSettings }: { initialSettings: Settings
                         sizeG: Number(event.target.value) * 1000,
                       }))
                     }
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    className="input-field mt-1.5"
                   />
                 </label>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  Grind type
+                <label className="block">
+                  <span className="text-xs font-semibold uppercase tracking-[0.1em] text-espresso-600">
+                    Grind type
+                  </span>
                   <input
                     value={mappingForm.grindType}
                     onChange={(event) =>
                       setMappingForm((prev) => ({ ...prev, grindType: event.target.value }))
                     }
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    className="input-field mt-1.5"
                     placeholder="Whole bean / Espresso"
                   />
                 </label>
@@ -387,7 +397,7 @@ export function SettingsManager({ initialSettings }: { initialSettings: Settings
               <button
                 onClick={handleMappingSubmit}
                 disabled={mappingDisabled}
-                className="w-full rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                className="btn-primary w-full"
               >
                 Save mapping
               </button>
@@ -398,31 +408,31 @@ export function SettingsManager({ initialSettings }: { initialSettings: Settings
 
       <SectionCard title="Coffees" subtitle="Manage single-origin coffees and roast loss percentages.">
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-            <p className="text-sm font-semibold text-slate-800">Active coffees</p>
-            <div className="mt-3 divide-y divide-slate-200">
+          <div className="rounded-xl bg-linen-100 p-5">
+            <p className="font-semibold text-espresso-800">Active coffees</p>
+            <div className="mt-4 divide-y divide-espresso-200">
               {settings.coffees.map((coffee) => (
                 <div
                   key={coffee.id}
-                  className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{coffee.name}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="font-semibold text-espresso-900">{coffee.name}</p>
+                    <p className="mt-0.5 text-sm text-espresso-500">
                       Roast loss {coffee.roastLossPercentage}%
-                      {coffee.costPerKg ? ` | $${coffee.costPerKg.toFixed(2)}/kg` : ""}
+                      {coffee.costPerKg ? ` · $${coffee.costPerKg.toFixed(2)}/kg` : ""}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleCoffeeEdit(coffee.id)}
-                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-800 transition hover:border-slate-300"
+                      className="rounded-lg border border-espresso-200 bg-white px-3 py-1.5 text-xs font-semibold text-espresso-700 transition-warm hover:border-espresso-300 hover:bg-espresso-50"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleCoffeeArchive(coffee.id)}
-                      className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800"
+                      className="rounded-lg bg-espresso-900 px-3 py-1.5 text-xs font-semibold text-white shadow-warm transition-warm hover:bg-espresso-800"
                     >
                       Archive
                     </button>
@@ -430,30 +440,34 @@ export function SettingsManager({ initialSettings }: { initialSettings: Settings
                 </div>
               ))}
               {settings.coffees.length === 0 ? (
-                <p className="py-3 text-sm text-slate-500">No coffees available.</p>
+                <p className="py-4 text-sm text-espresso-500">No coffees available.</p>
               ) : null}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-sm font-semibold text-slate-900">
+          <div className="rounded-xl border border-espresso-100 bg-white p-5 shadow-warm">
+            <p className="font-semibold text-espresso-900">
               {coffeeForm.id ? "Update coffee" : "Add coffee"}
             </p>
-            <div className="mt-3 space-y-3">
-              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600">
-                Name
+            <div className="mt-4 space-y-4">
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-[0.1em] text-espresso-600">
+                  Name
+                </span>
                 <input
                   value={coffeeForm.name}
                   onChange={(event) =>
                     setCoffeeForm((prev) => ({ ...prev, name: event.target.value }))
                   }
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  className="input-field mt-1.5"
                   placeholder="Kenya AA"
                 />
               </label>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  Roast loss (%)
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-xs font-semibold uppercase tracking-[0.1em] text-espresso-600">
+                    Roast loss (%)
+                  </span>
                   <input
                     type="number"
                     value={coffeeForm.roastLossPercentage}
@@ -463,18 +477,20 @@ export function SettingsManager({ initialSettings }: { initialSettings: Settings
                         roastLossPercentage: Number(event.target.value),
                       }))
                     }
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    className="input-field mt-1.5"
                   />
                 </label>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  Cost per kg (optional)
+                <label className="block">
+                  <span className="text-xs font-semibold uppercase tracking-[0.1em] text-espresso-600">
+                    Cost per kg (optional)
+                  </span>
                   <input
                     type="number"
                     value={coffeeForm.costPerKg}
                     onChange={(event) =>
                       setCoffeeForm((prev) => ({ ...prev, costPerKg: event.target.value }))
                     }
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    className="input-field mt-1.5"
                   />
                 </label>
               </div>
@@ -482,14 +498,14 @@ export function SettingsManager({ initialSettings }: { initialSettings: Settings
                 <button
                   onClick={handleCoffeeSubmit}
                   disabled={coffeeDisabled}
-                  className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="btn-primary"
                 >
                   Save coffee
                 </button>
                 {coffeeForm.id ? (
                   <button
                     onClick={resetCoffeeForm}
-                    className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300"
+                    className="btn-secondary"
                   >
                     Cancel edit
                   </button>
@@ -502,35 +518,35 @@ export function SettingsManager({ initialSettings }: { initialSettings: Settings
 
       <SectionCard title="Blends" subtitle="Define blend recipes using coffee components.">
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-            <p className="text-sm font-semibold text-slate-800">Active blends</p>
-            <div className="mt-3 divide-y divide-slate-200">
+          <div className="rounded-xl bg-linen-100 p-5">
+            <p className="font-semibold text-espresso-800">Active blends</p>
+            <div className="mt-4 divide-y divide-espresso-200">
               {settings.blends.map((blend) => (
                 <div
                   key={blend.id}
-                  className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{blend.name}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="font-semibold text-espresso-900">{blend.name}</p>
+                    <p className="mt-0.5 text-sm text-espresso-500">
                       {blend.components
                         .map((component) => {
                           const label = coffeeNameById.get(component.coffeeId) ?? component.coffeeId;
                           return `${component.percentage}% ${label}`;
                         })
-                        .join(" | ")}
+                        .join(" · ")}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleBlendEdit(blend)}
-                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-800 transition hover:border-slate-300"
+                      className="rounded-lg border border-espresso-200 bg-white px-3 py-1.5 text-xs font-semibold text-espresso-700 transition-warm hover:border-espresso-300 hover:bg-espresso-50"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleBlendArchive(blend.id)}
-                      className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800"
+                      className="rounded-lg bg-espresso-900 px-3 py-1.5 text-xs font-semibold text-white shadow-warm transition-warm hover:bg-espresso-800"
                     >
                       Archive
                     </button>
@@ -538,32 +554,37 @@ export function SettingsManager({ initialSettings }: { initialSettings: Settings
                 </div>
               ))}
               {settings.blends.length === 0 ? (
-                <p className="py-3 text-sm text-slate-500">No blends yet.</p>
+                <p className="py-4 text-sm text-espresso-500">No blends yet.</p>
               ) : null}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-sm font-semibold text-slate-900">
+          <div className="rounded-xl border border-espresso-100 bg-white p-5 shadow-warm">
+            <p className="font-semibold text-espresso-900">
               {blendForm.id ? "Update blend" : "Add blend"}
             </p>
-            <div className="mt-3 space-y-3">
-              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600">
-                Blend name
+            <div className="mt-4 space-y-4">
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-[0.1em] text-espresso-600">
+                  Blend name
+                </span>
                 <input
                   value={blendForm.name}
                   onChange={(event) => setBlendForm((prev) => ({ ...prev, name: event.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  className="input-field mt-1.5"
                   placeholder="House Blend"
                 />
               </label>
-              <div className="space-y-2">
+              <div className="space-y-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.1em] text-espresso-600">
+                  Components
+                </span>
                 {blendForm.components.map((component, index) => (
-                  <div key={`${component.coffeeId}-${index}`} className="grid grid-cols-[1fr_auto] items-center gap-2">
+                  <div key={`${component.coffeeId}-${index}`} className="flex items-center gap-2">
                     <select
                       value={component.coffeeId}
                       onChange={(event) => updateBlendComponent(index, "coffeeId", event.target.value)}
-                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                      className="input-field flex-1"
                     >
                       {settings.coffees.map((coffee) => (
                         <option key={coffee.id} value={coffee.id}>
@@ -571,45 +592,51 @@ export function SettingsManager({ initialSettings }: { initialSettings: Settings
                         </option>
                       ))}
                     </select>
-                    <div className="flex items-center gap-2">
+                    <div className="relative">
                       <input
                         type="number"
                         value={component.percentage}
                         onChange={(event) =>
                           updateBlendComponent(index, "percentage", Number(event.target.value))
                         }
-                        className="w-24 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        className="input-field w-20 pr-7 text-right"
                       />
-                      {blendForm.components.length > 1 ? (
-                        <button
-                          onClick={() => removeBlendComponent(index)}
-                          className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-800 transition hover:border-slate-300"
-                        >
-                          Remove
-                        </button>
-                      ) : null}
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-espresso-400">%</span>
                     </div>
+                    {blendForm.components.length > 1 ? (
+                      <button
+                        onClick={() => removeBlendComponent(index)}
+                        className="rounded-lg border border-espresso-200 bg-white p-2 text-espresso-500 transition-warm hover:border-espresso-300 hover:bg-espresso-50 hover:text-espresso-700"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    ) : null}
                   </div>
                 ))}
                 <button
                   onClick={addBlendComponent}
-                  className="mt-1 rounded-full border border-dashed border-emerald-400 px-3 py-1 text-xs font-semibold text-emerald-700"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-sienna-300 px-3 py-2 text-sm font-semibold text-sienna-600 transition-warm hover:border-sienna-400 hover:bg-sienna-50"
                 >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
                   Add component
                 </button>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pt-2">
                 <button
                   onClick={handleBlendSubmit}
                   disabled={blendDisabled}
-                  className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="btn-primary"
                 >
                   Save blend
                 </button>
                 {blendForm.id ? (
                   <button
                     onClick={resetBlendForm}
-                    className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300"
+                    className="btn-secondary"
                   >
                     Cancel edit
                   </button>
