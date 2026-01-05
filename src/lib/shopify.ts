@@ -4,6 +4,12 @@ type ShopifyCustomer = {
   first_name?: string | null;
   last_name?: string | null;
   email?: string | null;
+  default_address?: {
+    first_name?: string | null;
+    last_name?: string | null;
+    name?: string | null;
+    company?: string | null;
+  } | null;
 };
 
 type ShopifyAddress = {
@@ -72,6 +78,13 @@ const formatCustomerName = (order: ShopifyOrder) => {
     if (names.length) return names.join(" ");
   }
 
+  // Try customer's default address
+  if (customer?.default_address) {
+    const names = [customer.default_address.first_name, customer.default_address.last_name].filter(Boolean);
+    if (names.length) return names.join(" ");
+    if (customer.default_address.name) return customer.default_address.name;
+  }
+
   // Try billing address
   if (billing_address) {
     const names = [billing_address.first_name, billing_address.last_name].filter(Boolean);
@@ -85,6 +98,12 @@ const formatCustomerName = (order: ShopifyOrder) => {
     if (names.length) return names.join(" ");
     if (shipping_address.name) return shipping_address.name;
   }
+
+  // Fall back to company name if available
+  if (customer?.default_address?.company) return customer.default_address.company;
+
+  // Fall back to email if available
+  if (customer?.email) return customer.email;
 
   return "Guest checkout";
 };
@@ -104,8 +123,6 @@ export async function fetchUnfulfilledOrders(): Promise<ShopifyFetchResult> {
     fulfillment_status: "unfulfilled",
     limit: "250",
     order: "created_at desc",
-    fields:
-      "id,name,created_at,current_total_price,currency,customer,billing_address,shipping_address,line_items,financial_status,fulfillment_status",
   });
 
   const endpoint = `https://${storeDomain}/admin/api/${apiVersion}/orders.json?${query.toString()}`;

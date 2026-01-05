@@ -285,48 +285,71 @@ export function RoastPlanner({ session, settings: initialSettings }: Props) {
             return (
               <article
                 key={order.id}
-                className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+                className="py-4"
               >
-                <div>
-                  <p className="font-semibold text-espresso-900">
-                    {order.sourceOrderId} — {order.customerName}
-                  </p>
-                  <p className="mt-0.5 text-sm text-espresso-500">
-                    {order.items.length} items · {new Date(order.createdAt).toLocaleDateString()}
-                  </p>
-                  {typeof unmappedCount === "number" ? (
-                    <p className="mt-1 flex items-center gap-1 text-sm text-roast-600">
-                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                      </svg>
-                      Missing mappings for {unmappedCount} item{unmappedCount === 1 ? "" : "s"}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex-1">
+                    <p className="font-semibold text-espresso-900">
+                      {order.sourceOrderId} — {order.customerName}
                     </p>
-                  ) : null}
+                    <p className="mt-0.5 text-sm text-espresso-500">
+                      {order.items.length} items · {new Date(order.createdAt).toLocaleDateString()}
+                    </p>
+                    {typeof unmappedCount === "number" ? (
+                      <p className="mt-1 flex items-center gap-1 text-sm text-roast-600">
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                        </svg>
+                        Missing mappings for {unmappedCount} item{unmappedCount === 1 ? "" : "s"}
+                      </p>
+                    ) : null}
+                  </div>
+                  <button
+                    onClick={() => handleOrderToggle(order)}
+                    className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold shadow-warm transition-warm ${
+                      order.status === "skipped"
+                        ? "bg-roast-100 text-roast-800 hover:bg-roast-200"
+                        : "bg-sage-600 text-white hover:bg-sage-500"
+                    }`}
+                  >
+                    {order.status === "skipped" ? (
+                      <>
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg>
+                        Skipped
+                      </>
+                    ) : (
+                      <>
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Included
+                      </>
+                    )}
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleOrderToggle(order)}
-                  className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold shadow-warm transition-warm ${
-                    order.status === "skipped"
-                      ? "bg-roast-100 text-roast-800 hover:bg-roast-200"
-                      : "bg-sage-600 text-white hover:bg-sage-500"
-                  }`}
-                >
-                  {order.status === "skipped" ? (
-                    <>
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                      </svg>
-                      Skipped
-                    </>
-                  ) : (
-                    <>
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Included
-                    </>
-                  )}
-                </button>
+                {/* Order items list */}
+                <div className="mt-3 rounded-lg bg-linen-50 p-3">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-espresso-100">
+                        <th className="pb-2 text-left text-xs font-semibold uppercase tracking-wide text-espresso-500">Product</th>
+                        <th className="pb-2 text-left text-xs font-semibold uppercase tracking-wide text-espresso-500">SKU</th>
+                        <th className="pb-2 text-right text-xs font-semibold uppercase tracking-wide text-espresso-500">Qty</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-espresso-100">
+                      {order.items.map((item) => (
+                        <tr key={item.id}>
+                          <td className="py-2 text-espresso-700">{item.productName}</td>
+                          <td className="py-2 font-mono text-xs text-espresso-500">{item.variantId}</td>
+                          <td className="py-2 text-right font-semibold text-espresso-800">{item.quantity}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </article>
             );
           })}
