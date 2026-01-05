@@ -30,7 +30,7 @@ export async function buildRoastingPdf(sessionId: string, computation: RoastComp
 
   y -= 18;
   computation.results.forEach((result) => {
-    page.drawText(result.blendName ? `${result.coffeeName} → ${result.blendName}` : result.coffeeName, {
+    page.drawText(result.blendName ? `${result.coffeeName} -> ${result.blendName}` : result.coffeeName, {
       x: 50,
       y,
       size: 10,
