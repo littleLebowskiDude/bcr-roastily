@@ -3,10 +3,11 @@ import { getSessionWithComputation } from "@/lib/roast-sessions";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(_request: Request, context: RouteContext) {
-  const session = await getSessionWithComputation(context.params.id);
+  const { id } = await context.params;
+  const session = await getSessionWithComputation(id);
   if (!session) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
