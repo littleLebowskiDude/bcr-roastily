@@ -12,6 +12,6 @@ export async function GET() {
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const date = typeof body.sessionDate === "string" ? body.sessionDate : undefined;
-  const session = createRoastSession(date);
+  const session = await createRoastSession(date);
   return NextResponse.json({ session }, { status: 201 });
 }

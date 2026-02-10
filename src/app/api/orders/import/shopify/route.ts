@@ -28,4 +28,4 @@ export async function POST(_request: Request) {
   );
 }
 
-export { POST as GET };
+// GET intentionally not exported -- this endpoint mutates data and must only be called via POST

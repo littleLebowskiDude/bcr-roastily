@@ -16,9 +16,9 @@ export async function PUT(request: Request, context: RouteContext) {
   const costPerKg =
     typeof body.costPerKg === "number" ? body.costPerKg : Number(body.costPerKg ?? "");
 
-  if (!name || Number.isNaN(roastLossPercentage)) {
+  if (!name || Number.isNaN(roastLossPercentage) || roastLossPercentage < 0 || roastLossPercentage >= 100) {
     return NextResponse.json(
-      { error: "Name and roastLossPercentage are required" },
+      { error: "Name required and roastLossPercentage must be between 0 and 99" },
       { status: 400 },
     );
   }

@@ -46,7 +46,9 @@ export function calculateRoastPlan(input: EngineInput): RoastComputation {
     onHandMap.set(bucketKey(entry.bucketType, entry.bucketId), entry.onHandRoastedG);
   });
 
-  const coffeeNeeds = new Map<string, { roasted: number; blendId?: string }>();
+  // Key on "coffeeId:blendId" or "coffeeId:direct" so a coffee used in multiple
+  // blends (or as both single-origin and blend component) gets separate entries.
+  const coffeeNeeds = new Map<string, { roasted: number; coffeeId: string; blendId?: string }>();
   const blendBuckets = new Map<string, BlendBucket>();
   const baggingLines = new Map<string, BaggingLine>();
   const pickList: PickListLine[] = [];
@@ -96,9 +98,11 @@ export function calculateRoastPlan(input: EngineInput): RoastComputation {
           const componentRoasted = afterBlendOnHand * (component.percentage / 100);
           const afterOnHand = consumeOnHand("coffee", component.coffeeId, componentRoasted);
           if (afterOnHand <= 0) return;
-          const current = coffeeNeeds.get(component.coffeeId);
-          coffeeNeeds.set(component.coffeeId, {
+          const needsKey = `${component.coffeeId}:${blend.id}`;
+          const current = coffeeNeeds.get(needsKey);
+          coffeeNeeds.set(needsKey, {
             roasted: (current?.roasted ?? 0) + afterOnHand,
+            coffeeId: component.coffeeId,
             blendId: blend.id,
           });
           const blendBucket = blendBuckets.get(blend.id) ?? {
@@ -114,9 +118,11 @@ export function calculateRoastPlan(input: EngineInput): RoastComputation {
       } else {
         const afterOnHand = consumeOnHand("coffee", item.mappedCoffeeId, neededRoasted);
         if (afterOnHand <= 0) return;
-        const current = coffeeNeeds.get(item.mappedCoffeeId);
-        coffeeNeeds.set(item.mappedCoffeeId, {
+        const needsKey = `${item.mappedCoffeeId}:direct`;
+        const current = coffeeNeeds.get(needsKey);
+        coffeeNeeds.set(needsKey, {
           roasted: (current?.roasted ?? 0) + afterOnHand,
+          coffeeId: item.mappedCoffeeId,
         });
       }
     });
@@ -127,10 +133,10 @@ export function calculateRoastPlan(input: EngineInput): RoastComputation {
   let totalGreenRequiredG = 0;
   let totalDrops = 0;
 
-  coffeeNeeds.forEach(({ roasted, blendId }, coffeeId) => {
+  coffeeNeeds.forEach(({ roasted, coffeeId, blendId }) => {
     const coffee = coffeeMap.get(coffeeId);
     if (!coffee) return;
-    const roastLoss = coffee.roastLossPercentage / 100;
+    const roastLoss = Math.min(Math.max(coffee.roastLossPercentage, 0), 99) / 100;
     const greenRequired = roasted / (1 - roastLoss);
     const drops = Math.ceil(greenRequired / BATCH_SIZE_G);
     const totalGreen = drops * BATCH_SIZE_G;
@@ -173,7 +179,9 @@ export function calculateRoastPlan(input: EngineInput): RoastComputation {
 
   const updatedOnHand: OnHandStock[] = Array.from(onHandMap.entries()).map(
     ([key, value]) => {
-      const [bucketType, bucketId] = key.split(":") as ["coffee" | "blend", string];
+      const colonIdx = key.indexOf(":");
+      const bucketType = key.slice(0, colonIdx) as "coffee" | "blend";
+      const bucketId = key.slice(colonIdx + 1);
       return { bucketType, bucketId, onHandRoastedG: value };
     },
   );
